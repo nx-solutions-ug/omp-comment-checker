@@ -10,6 +10,9 @@ export type ProcessResult = {
 	stderr: string;
 };
 
+export const MAX_PROCESS_OUTPUT_BYTES = 64 * 1024;
+export const PROCESS_TIMEOUT_MS = 30_000;
+
 export type ProcessExecutor = (command: string, args: string[], stdin: string) => Promise<ProcessResult>;
 
 export type RunCommentCheckerOptions = {
@@ -97,31 +100,114 @@ function resolvePackageBinary(binaryName: string): string | undefined {
 	}
 }
 
-function spawnProcess(command: string, args: string[], stdin: string): Promise<ProcessResult> {
+interface OutputAccumulator {
+	text: string;
+	bytes: number;
+	truncated: boolean;
+}
+
+function appendOutput(output: OutputAccumulator, chunk: string, maxOutputBytes: number): void {
+	if (output.truncated) return;
+
+	const remainingBytes = maxOutputBytes - output.bytes;
+	const chunkBytes = Buffer.byteLength(chunk, "utf8");
+	if (chunkBytes <= remainingBytes) {
+		output.text += chunk;
+		output.bytes += chunkBytes;
+		return;
+	}
+
+	if (remainingBytes > 0) {
+		const prefix = truncateUtf8Prefix(chunk, remainingBytes);
+		output.text += prefix;
+		output.bytes += Buffer.byteLength(prefix, "utf8");
+	}
+	output.truncated = true;
+}
+
+function replaceOutput(output: OutputAccumulator, text: string, maxOutputBytes: number): void {
+	output.text = "";
+	output.bytes = 0;
+	output.truncated = false;
+	appendOutput(output, text, maxOutputBytes);
+}
+
+function truncateUtf8Prefix(text: string, maxBytes: number): string {
+	let bytes = 0;
+	let endIndex = 0;
+	for (const character of text) {
+		const characterBytes = Buffer.byteLength(character, "utf8");
+		if (bytes + characterBytes > maxBytes) break;
+		bytes += characterBytes;
+		endIndex += character.length;
+	}
+	return text.slice(0, endIndex);
+}
+
+function formatOutput(output: OutputAccumulator, streamName: "stdout" | "stderr", maxOutputBytes: number): string {
+	if (!output.truncated) return output.text;
+	return `${output.text}\n[${streamName} truncated after ${maxOutputBytes} bytes]`;
+}
+
+export function spawnProcess(
+	command: string,
+	args: string[],
+	stdin: string,
+	maxOutputBytes: number = MAX_PROCESS_OUTPUT_BYTES,
+	processTimeoutMs: number = PROCESS_TIMEOUT_MS,
+): Promise<ProcessResult> {
 	return new Promise((resolve) => {
+		const outputByteLimit = Number.isFinite(maxOutputBytes) && maxOutputBytes > 0 ? Math.floor(maxOutputBytes) : 0;
+		const timeoutLimit = Number.isFinite(processTimeoutMs) && processTimeoutMs > 0 ? Math.floor(processTimeoutMs) : 0;
 		const proc = spawn(command, args, {
 			stdio: ["pipe", "pipe", "pipe"],
 		});
-		let stdout = "";
-		let stderr = "";
+		const stdout: OutputAccumulator = { text: "", bytes: 0, truncated: false };
+		const stderr: OutputAccumulator = { text: "", bytes: 0, truncated: false };
+		let settled = false;
+		let timedOut = false;
+		let killTimer: ReturnType<typeof setTimeout> | undefined;
+		const timeoutTimer =
+			timeoutLimit > 0
+				? setTimeout(() => {
+						if (settled) return;
+						timedOut = true;
+						replaceOutput(stderr, `comment-checker process timed out after ${timeoutLimit} ms`, outputByteLimit);
+						proc.kill("SIGTERM");
+						killTimer = setTimeout(() => {
+							if (!settled) proc.kill("SIGKILL");
+						}, 1_000);
+						killTimer.unref();
+					}, timeoutLimit)
+				: undefined;
+		timeoutTimer?.unref();
+
+		const finish = (exitCode: number | null): void => {
+			if (settled) return;
+			settled = true;
+			if (timeoutTimer) clearTimeout(timeoutTimer);
+			if (killTimer) clearTimeout(killTimer);
+			resolve({
+				exitCode: timedOut ? null : exitCode,
+				stdout: formatOutput(stdout, "stdout", outputByteLimit),
+				stderr: formatOutput(stderr, "stderr", outputByteLimit),
+			});
+		};
 
 		proc.stdout.setEncoding("utf-8");
 		proc.stderr.setEncoding("utf-8");
 		proc.stdout.on("data", (chunk: string) => {
-			stdout += chunk;
+			appendOutput(stdout, chunk, outputByteLimit);
 		});
 		proc.stderr.on("data", (chunk: string) => {
-			stderr += chunk;
+			appendOutput(stderr, chunk, outputByteLimit);
 		});
 		proc.once("error", (error) => {
-			resolve({
-				exitCode: null,
-				stdout,
-				stderr: `${stderr}${error.message}`,
-			});
+			appendOutput(stderr, error.message, outputByteLimit);
+			finish(null);
 		});
 		proc.once("close", (exitCode) => {
-			resolve({ exitCode, stdout, stderr });
+			finish(exitCode);
 		});
 		proc.stdin.end(stdin);
 	});

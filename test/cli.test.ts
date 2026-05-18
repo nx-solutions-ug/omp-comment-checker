@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { type ProcessExecutor, runCommentChecker } from "../src/cli.ts";
+import {
+	MAX_PROCESS_OUTPUT_BYTES,
+	PROCESS_TIMEOUT_MS,
+	type ProcessExecutor,
+	runCommentChecker,
+	spawnProcess,
+} from "../src/cli.ts";
 import type { CommentCheckerHookInput } from "../src/core.ts";
 
 function makeHookInput(): CommentCheckerHookInput {
@@ -17,6 +23,79 @@ function makeHookInput(): CommentCheckerHookInput {
 }
 
 describe("runCommentChecker", () => {
+	it("#given noisy checker process #when output exceeds cap #then stderr is bounded", async () => {
+		// given
+		const maxOutputBytes = 16;
+
+		// when
+		const result = await spawnProcess(
+			process.execPath,
+			["-e", "process.stderr.write('x'.repeat(40)); process.exit(2);"],
+			"",
+			maxOutputBytes,
+		);
+
+		// then
+		expect(MAX_PROCESS_OUTPUT_BYTES).toBeGreaterThan(maxOutputBytes);
+		expect(result.exitCode).toBe(2);
+		expect(result.stderr).toBe(`${"x".repeat(maxOutputBytes)}\n[stderr truncated after 16 bytes]`);
+	});
+
+	it("#given multibyte process output #when cap splits a character #then stderr keeps valid UTF-8", async () => {
+		// given
+		const maxOutputBytes = 1;
+
+		// when
+		const result = await spawnProcess(
+			process.execPath,
+			["-e", "process.stderr.write('🙂'); process.exit(2);"],
+			"",
+			maxOutputBytes,
+		);
+
+		// then
+		expect(result.exitCode).toBe(2);
+		expect(result.stderr).toBe("\n[stderr truncated after 1 bytes]");
+	});
+
+	it("#given hanging checker process #when timeout expires #then returns bounded error", async () => {
+		// given
+		const processTimeoutMs = 50;
+
+		// when
+		const result = await spawnProcess(
+			process.execPath,
+			["-e", "setInterval(() => {}, 1000);"],
+			"",
+			MAX_PROCESS_OUTPUT_BYTES,
+			processTimeoutMs,
+		);
+
+		// then
+		expect(PROCESS_TIMEOUT_MS).toBeGreaterThan(processTimeoutMs);
+		expect(result.exitCode).toBeNull();
+		expect(result.stderr).toBe("comment-checker process timed out after 50 ms");
+	});
+
+	it("#given noisy hanging checker process #when timeout expires #then timeout reason is preserved", async () => {
+		// given
+		const maxOutputBytes = 128;
+		const processTimeoutMs = 50;
+
+		// when
+		const result = await spawnProcess(
+			process.execPath,
+			["-e", "process.stderr.write('x'.repeat(512)); setInterval(() => {}, 1000);"],
+			"",
+			maxOutputBytes,
+			processTimeoutMs,
+		);
+
+		// then
+		expect(result.exitCode).toBeNull();
+		expect(result.stderr).toBe("comment-checker process timed out after 50 ms");
+	});
+
 	it("#given executor exit zero #when running checker #then returns pass and sends hook JSON", async () => {
 		// given
 		const input = makeHookInput();
