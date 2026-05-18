@@ -11,6 +11,7 @@ export type ProcessResult = {
 };
 
 export const MAX_PROCESS_OUTPUT_BYTES = 64 * 1024;
+export const PROCESS_TIMEOUT_MS = 30_000;
 
 export type ProcessExecutor = (command: string, args: string[], stdin: string) => Promise<ProcessResult>;
 
@@ -146,14 +147,45 @@ export function spawnProcess(
 	args: string[],
 	stdin: string,
 	maxOutputBytes: number = MAX_PROCESS_OUTPUT_BYTES,
+	processTimeoutMs: number = PROCESS_TIMEOUT_MS,
 ): Promise<ProcessResult> {
 	return new Promise((resolve) => {
 		const outputByteLimit = Number.isFinite(maxOutputBytes) && maxOutputBytes > 0 ? Math.floor(maxOutputBytes) : 0;
+		const timeoutLimit = Number.isFinite(processTimeoutMs) && processTimeoutMs > 0 ? Math.floor(processTimeoutMs) : 0;
 		const proc = spawn(command, args, {
 			stdio: ["pipe", "pipe", "pipe"],
 		});
 		const stdout: OutputAccumulator = { text: "", bytes: 0, truncated: false };
 		const stderr: OutputAccumulator = { text: "", bytes: 0, truncated: false };
+		let settled = false;
+		let timedOut = false;
+		let killTimer: ReturnType<typeof setTimeout> | undefined;
+		const timeoutTimer =
+			timeoutLimit > 0
+				? setTimeout(() => {
+						if (settled) return;
+						timedOut = true;
+						appendOutput(stderr, `comment-checker process timed out after ${timeoutLimit} ms`, outputByteLimit);
+						proc.kill("SIGTERM");
+						killTimer = setTimeout(() => {
+							if (!settled) proc.kill("SIGKILL");
+						}, 1_000);
+						killTimer.unref();
+					}, timeoutLimit)
+				: undefined;
+		timeoutTimer?.unref();
+
+		const finish = (exitCode: number | null): void => {
+			if (settled) return;
+			settled = true;
+			if (timeoutTimer) clearTimeout(timeoutTimer);
+			if (killTimer) clearTimeout(killTimer);
+			resolve({
+				exitCode: timedOut ? null : exitCode,
+				stdout: formatOutput(stdout, "stdout", outputByteLimit),
+				stderr: formatOutput(stderr, "stderr", outputByteLimit),
+			});
+		};
 
 		proc.stdout.setEncoding("utf-8");
 		proc.stderr.setEncoding("utf-8");
@@ -165,18 +197,10 @@ export function spawnProcess(
 		});
 		proc.once("error", (error) => {
 			appendOutput(stderr, error.message, outputByteLimit);
-			resolve({
-				exitCode: null,
-				stdout: formatOutput(stdout, "stdout", outputByteLimit),
-				stderr: formatOutput(stderr, "stderr", outputByteLimit),
-			});
+			finish(null);
 		});
 		proc.once("close", (exitCode) => {
-			resolve({
-				exitCode,
-				stdout: formatOutput(stdout, "stdout", outputByteLimit),
-				stderr: formatOutput(stderr, "stderr", outputByteLimit),
-			});
+			finish(exitCode);
 		});
 		proc.stdin.end(stdin);
 	});

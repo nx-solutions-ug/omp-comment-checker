@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { MAX_PROCESS_OUTPUT_BYTES, type ProcessExecutor, runCommentChecker, spawnProcess } from "../src/cli.ts";
+import {
+	MAX_PROCESS_OUTPUT_BYTES,
+	PROCESS_TIMEOUT_MS,
+	type ProcessExecutor,
+	runCommentChecker,
+	spawnProcess,
+} from "../src/cli.ts";
 import type { CommentCheckerHookInput } from "../src/core.ts";
 
 function makeHookInput(): CommentCheckerHookInput {
@@ -50,6 +56,25 @@ describe("runCommentChecker", () => {
 		// then
 		expect(result.exitCode).toBe(2);
 		expect(result.stderr).toBe("\n[stderr truncated after 1 bytes]");
+	});
+
+	it("#given hanging checker process #when timeout expires #then returns bounded error", async () => {
+		// given
+		const processTimeoutMs = 50;
+
+		// when
+		const result = await spawnProcess(
+			process.execPath,
+			["-e", "setInterval(() => {}, 1000);"],
+			"",
+			MAX_PROCESS_OUTPUT_BYTES,
+			processTimeoutMs,
+		);
+
+		// then
+		expect(PROCESS_TIMEOUT_MS).toBeGreaterThan(processTimeoutMs);
+		expect(result.exitCode).toBeNull();
+		expect(result.stderr).toBe("comment-checker process timed out after 50 ms");
 	});
 
 	it("#given executor exit zero #when running checker #then returns pass and sends hook JSON", async () => {
