@@ -12,10 +12,10 @@ export type WarningRecord = {
 	fired: boolean;
 };
 
-type PartialPiHost = {
-	appendEntry: ((customType: string, data: unknown) => void) | undefined;
-	sendMessage: ((message: string, options?: { triggerTurn?: boolean }) => void) | undefined;
-	on: ((event: string, handler: () => void) => (() => void) | undefined) | undefined;
+type PiHost = {
+	appendEntry: (customType: string, data: unknown) => void;
+	sendMessage: (message: string, options?: { triggerTurn?: boolean }) => void;
+	on: (event: string, handler: () => void) => (() => void) | undefined;
 };
 
 export type OmpBackend = {
@@ -31,34 +31,21 @@ export type OmpBackend = {
 	onSessionCompact(handler: () => void): () => void;
 };
 
-function probePi(pi: unknown): PartialPiHost {
-	if (typeof pi !== "object" || pi === null) {
-		return {
-			appendEntry: undefined,
-			sendMessage: undefined,
-			on: undefined,
-		};
+function isPiHost(value: unknown): value is PiHost {
+	if (typeof value !== "object" || value === null) {
+		return false;
 	}
-	const record = pi as Record<string, unknown>;
-	return {
-		appendEntry:
-			typeof record["appendEntry"] === "function"
-				? (record["appendEntry"] as (customType: string, data: unknown) => void)
-				: undefined,
-		sendMessage:
-			typeof record["sendMessage"] === "function"
-				? (record["sendMessage"] as (message: string, options?: { triggerTurn?: boolean }) => void)
-				: undefined,
-		on:
-			typeof record["on"] === "function"
-				? (record["on"] as (event: string, handler: () => void) => (() => void) | undefined)
-				: undefined,
-	};
+	const record = value as Record<string, unknown>;
+	return (
+		typeof record["appendEntry"] === "function" ||
+		typeof record["sendMessage"] === "function" ||
+		typeof record["on"] === "function"
+	);
 }
 
 export function createOmpBackend(pi: unknown): OmpBackend {
-	const host = probePi(pi);
-	const available = host.appendEntry !== undefined || host.sendMessage !== undefined || host.on !== undefined;
+	const available = isPiHost(pi);
+	const api = (available ? pi : undefined) as Partial<PiHost> | undefined;
 
 	return {
 		available,
@@ -75,28 +62,18 @@ export function createOmpBackend(pi: unknown): OmpBackend {
 		},
 
 		appendEntry(customType, data) {
-			const fn = host.appendEntry;
-			if (typeof fn !== "function") {
-				return;
-			}
-			fn(customType, data);
+			api?.appendEntry?.(customType, data);
 		},
 
 		sendMessage(content, options) {
-			const fn = host.sendMessage;
-			if (typeof fn !== "function") {
-				return;
-			}
-			fn(content, options);
+			api?.sendMessage?.(content, options);
 		},
 
 		onSessionCompact(handler) {
-			const fn = host.on;
-			if (typeof fn !== "function") {
+			if (!api?.on) {
 				return () => {};
 			}
-
-			const off = fn("session_compact", handler);
+			const off = api.on("session_compact", handler);
 			if (typeof off === "function") {
 				return off;
 			}
