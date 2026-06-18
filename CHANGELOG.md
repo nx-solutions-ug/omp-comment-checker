@@ -3,6 +3,33 @@
 
 ### Bug Fixes
 
+* add @semantic-release/npm plugin to publish to npm ([07fe727](https://github.com/nx-solutions-ug/omp-comment-checker/commit/07fe727146be581df0e0622b2a4cb55b4e36bf6e))
+* **build:** restore @types/node, @mariozechner/pi-ai devDeps; repair semver tag ([2c9f903](https://github.com/nx-solutions-ug/omp-comment-checker/commit/2c9f903164001a84c9e602d4179b38da6c11b6b0))
+* **cli:** preserve timeout reason after truncation ([b51fb51](https://github.com/nx-solutions-ug/omp-comment-checker/commit/b51fb51dc3373945a606f842cd45126807b4d6e7))
+* **cli:** preserve UTF-8 when truncating output ([ff5b7cc](https://github.com/nx-solutions-ug/omp-comment-checker/commit/ff5b7cc6834214a657a3429a8a15b03df7fd3ff4))
+* **cli:** resolve comment checker package binary ([caa3648](https://github.com/nx-solutions-ug/omp-comment-checker/commit/caa364815a755591af73251f6ec8350977752e0a))
+* **cli:** time out hanging checker processes ([622ea45](https://github.com/nx-solutions-ug/omp-comment-checker/commit/622ea457b63f4d8b0475eda3de06a475edbe53ca))
+* hide comment checker warning widget ([5bfe1d0](https://github.com/nx-solutions-ug/omp-comment-checker/commit/5bfe1d0981c46d7af456c0a3352592f69b92e18d))
+* **omp:** preserve this-binding when calling host API methods ([c4fde44](https://github.com/nx-solutions-ug/omp-comment-checker/commit/c4fde4469f51d24b3f6067df8690c77607ef594d))
+* quiet comment checker widget ([e24257b](https://github.com/nx-solutions-ug/omp-comment-checker/commit/e24257bbb24b33ffc1c542c3fc67cfd09f96cc76))
+
+
+### Features
+
+* add pi comment checker extension ([e669c6e](https://github.com/nx-solutions-ug/omp-comment-checker/commit/e669c6eefd07f9fb925f1073fa75c400749bc520))
+* **omp:** retarget at oh-my-pi with self-heal loop ([a02f1e7](https://github.com/nx-solutions-ug/omp-comment-checker/commit/a02f1e7c308efa2e43d49f8e34a861f141f9dc5b))
+* publish as @chronova/omp-comment-checker ([3f73fa5](https://github.com/nx-solutions-ug/omp-comment-checker/commit/3f73fa588481e57c53d4a6758814f291f7f53fe7))
+
+
+### Performance Improvements
+
+* **cli:** bound checker process output ([9f5a11a](https://github.com/nx-solutions-ug/omp-comment-checker/commit/9f5a11a8a71c9ffaeb779e4299599750d1d187bf))
+
+# 1.0.0 (2026-06-18)
+
+
+### Bug Fixes
+
 * **build:** restore @types/node, @mariozechner/pi-ai devDeps; repair semver tag ([2c9f903](https://github.com/nx-solutions-ug/omp-comment-checker/commit/2c9f903164001a84c9e602d4179b38da6c11b6b0))
 * **cli:** preserve timeout reason after truncation ([b51fb51](https://github.com/nx-solutions-ug/omp-comment-checker/commit/b51fb51dc3373945a606f842cd45126807b4d6e7))
 * **cli:** preserve UTF-8 when truncating output ([ff5b7cc](https://github.com/nx-solutions-ug/omp-comment-checker/commit/ff5b7cc6834214a657a3429a8a15b03df7fd3ff4))
