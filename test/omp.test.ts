@@ -114,7 +114,9 @@ describe("createOmpBackend", () => {
 		const backend = createOmpBackend(pi);
 		backend.appendEntry("type-a", { x: 1 });
 		backend.sendMessage("hello", { triggerTurn: true });
-		const cleanup = backend.onSessionCompact(() => {});
+		const cleanup = backend.onSessionCompact(() => {
+			/* no-op */
+		});
 		cleanup();
 
 		// then
@@ -136,7 +138,9 @@ describe("createOmpBackend", () => {
 		// when
 		const backend = createOmpBackend(pi);
 		backend.sendMessage("hello");
-		const cleanup = backend.onSessionCompact(() => {});
+		const cleanup = backend.onSessionCompact(() => {
+			/* no-op */
+		});
 
 		// then
 		expect(backend.available).toBe(true);
@@ -152,7 +156,9 @@ describe("createOmpBackend", () => {
 		const backend = createOmpBackend(pi);
 		backend.appendEntry("type-a", { x: 1 });
 		backend.sendMessage("hello");
-		const cleanup = backend.onSessionCompact(() => {});
+		const cleanup = backend.onSessionCompact(() => {
+			/* no-op */
+		});
 
 		// then
 		expect(backend.available).toBe(false);
@@ -165,14 +171,18 @@ describe("createOmpBackend", () => {
 		const ctx: ExtensionContextLike = {
 			cwd: "/workspace",
 			ui: {
-				setWidget: () => {},
+				setWidget: () => {
+					/* no-op */
+				},
 				setStatus: (key, text) => {
 					statusCalls.push([key, text]);
 				},
 			},
 		};
 		const pi = {
-			appendEntry: () => {},
+			appendEntry: () => {
+				/* no-op */
+			},
 		};
 
 		// when
@@ -324,9 +334,15 @@ describe("ompCommentCheckerExtension end-to-end", () => {
 				cwd: "/workspace",
 				sessionManager: { getSessionId: () => "session-1" },
 				ui: {
-					setWidget: () => {},
-					setStatus: () => {},
-					notify: () => {},
+					setWidget: () => {
+						/* no-op */
+					},
+					setStatus: () => {
+						/* no-op */
+					},
+					notify: () => {
+						/* no-op */
+					},
 				},
 			},
 		);
@@ -340,7 +356,17 @@ describe("ompCommentCheckerExtension end-to-end", () => {
 		// when session_compact fires with unfired warnings
 		const compactHandlers = eventHandlers["session_compact"];
 		expect(compactHandlers).toBeDefined();
-		await compactHandlers?.[0]?.({}, { cwd: "/workspace", ui: { setWidget: () => {} } });
+		await compactHandlers?.[0]?.(
+			{},
+			{
+				cwd: "/workspace",
+				ui: {
+					setWidget: () => {
+						/* no-op */
+					},
+				},
+			},
+		);
 
 		// then one sendMessage is recorded
 		expect(messageCalls.length).toBe(1);

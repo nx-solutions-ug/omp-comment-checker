@@ -15,7 +15,10 @@
 			"suspicious": {
 				"noExplicitAny": "error",
 				"noControlCharactersInRegex": "off",
-				"noEmptyInterface": "off"
+				"noEmptyInterface": "off",
+				"noConsole": { "level": "error", "options": { "allow": ["error", "warn"] } },
+				"noEmptyBlockStatements": "error",
+				"noTsIgnore": "error"
 			}
 		}
 	},

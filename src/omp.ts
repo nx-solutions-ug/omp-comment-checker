@@ -71,13 +71,17 @@ export function createOmpBackend(pi: unknown): OmpBackend {
 
 		onSessionCompact(handler) {
 			if (!api?.on) {
-				return () => {};
+				return () => {
+					/* no-op */
+				};
 			}
 			const off = api.on("session_compact", handler);
 			if (typeof off === "function") {
 				return off;
 			}
-			return () => {};
+			return () => {
+				/* no-op */
+			};
 		},
 	};
 }
