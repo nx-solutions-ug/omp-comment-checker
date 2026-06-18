@@ -1,17 +1,17 @@
 {
-	"name": "omp-comment-checker",
+	"name": "@chronova/omp-comment-checker",
 	"version": "0.3.0",
 	"description": "Comment checker hook extension for oh-my-pi (omp). Runs @code-yeongyu/comment-checker after write, edit, multiedit, apply_patch, hashline, patch, and replace, then self-heals via omp's session_compact + TUI notifications.",
 	"type": "module",
 	"license": "MIT",
-	"homepage": "https://github.com/niklasschaeffer/omp-comment-checker",
+	"homepage": "https://github.com/nx-solutions-ug/omp-comment-checker",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/niklasschaeffer/omp-comment-checker.git",
+		"url": "git+https://github.com/nx-solutions-ug/omp-comment-checker.git",
 		"directory": "."
 	},
 	"bugs": {
-		"url": "https://github.com/niklasschaeffer/omp-comment-checker/issues"
+		"url": "https://github.com/nx-solutions-ug/omp-comment-checker/issues"
 	},
 	"keywords": [
 		"oh-my-pi",

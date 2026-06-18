@@ -68,18 +68,18 @@ The package targets both the omp extension loader and the upstream pi
 extension loader.
 
 ```bash
-# 1. From npm (once published)
-omp install npm:omp-comment-checker
-pi  install npm:omp-comment-checker
+# 1. From npm
+omp install npm:@chronova/omp-comment-checker
+pi  install npm:@chronova/omp-comment-checker
 
 # 2. From git
-omp install git:github:niklasschaeffer/omp-comment-checker
-pi  install git:github:niklasschaeffer/omp-comment-checker
+omp install git:github:nx-solutions-ug/omp-comment-checker
+pi  install git:github:nx-solutions-ug/omp-comment-checker
 
 # 3. omp settings.json (~/.omp/settings.json)
 {
   "packages": [
-    "git:github:niklasschaeffer/omp-comment-checker"
+    "git:github:nx-solutions-ug/omp-comment-checker"
   ]
 }
 
