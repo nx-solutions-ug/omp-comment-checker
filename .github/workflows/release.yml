@@ -32,7 +32,6 @@ jobs:
 
       - name: Run lint
         run: npm run lint
-]
 
   # Run semantic-release if tests pass
   release:
