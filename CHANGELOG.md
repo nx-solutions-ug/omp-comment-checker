@@ -1,3 +1,10 @@
+## [1.1.3](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.1.2...v1.1.3) (2026-07-06)
+
+
+### Bug Fixes
+
+* **ci:** add id-token:write permission for npm provenance publishing ([04cdafd](https://github.com/nx-solutions-ug/omp-comment-checker/commit/04cdafd3a4fa296db09ca24a7e898cf5314a3e59))
+
 ## [1.1.2](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.1.1...v1.1.2) (2026-07-06)
 
 
