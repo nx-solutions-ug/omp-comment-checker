@@ -1,3 +1,11 @@
+## [1.1.2](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.1.1...v1.1.2) (2026-07-06)
+
+
+### Bug Fixes
+
+* **ci:** correct typecheck and lint script names in release workflow ([162ae3d](https://github.com/nx-solutions-ug/omp-comment-checker/commit/162ae3dce5f8869871d54440b88023d8eebf4948))
+* **ci:** remove stray bracket causing release.yml parse error ([484f11a](https://github.com/nx-solutions-ug/omp-comment-checker/commit/484f11a2badb8a00eb65e758bcb1751594794849))
+
 ## [1.1.1](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.1.0...v1.1.1) (2026-06-22)
 
 
