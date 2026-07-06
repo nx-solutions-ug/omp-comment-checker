@@ -76,7 +76,7 @@
 		"@code-yeongyu/comment-checker": "^0.8.0"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.5.1",
+		"@biomejs/biome": "2.5.2",
 		"@mariozechner/pi-ai": "*",
 		"@semantic-release/changelog": "^6.0.3",
 		"@semantic-release/commit-analyzer": "^13.0.1",
