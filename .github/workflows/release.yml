@@ -27,11 +27,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run TypeScript type check
-        run: npm run type-check
+      - name: Run type check
+        run: npm run typecheck
 
-      - name: Run ESLint
+      - name: Run lint
         run: npm run lint
+]
 
   # Run semantic-release if tests pass
   release:
