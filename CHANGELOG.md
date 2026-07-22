@@ -1,3 +1,10 @@
+## [1.1.4](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.1.3...v1.1.4) (2026-07-22)
+
+
+### Bug Fixes
+
+* update deps + added wiki-agent instead of openwiki ([042f3f5](https://github.com/nx-solutions-ug/omp-comment-checker/commit/042f3f519dbfb9e896fade2db9643e33fc9cfaea))
+
 ## [1.1.3](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.1.2...v1.1.3) (2026-07-06)
 
 
