@@ -140,7 +140,7 @@ It runs on push to `main`, daily at 08:00 UTC, and on `workflow_dispatch`.
 - Requires a PR with at least 1 approving review, code-owner review, and resolved review threads.
 - Requires the four CI contexts `test (ubuntu-latest · node 20)`, `test (ubuntu-latest · node 22)`, `test (macos-latest · node 20)`, `test (macos-latest · node 22)`.
 
-[`.github/CODEOWNERS`](/.github/CODEOWNERS) assigns `@code-yeongyu` as the default code owner for the repo, with explicit ownership for `.github/workflows/*`, `package.json`, `package-lock.json`, `LICENSE`, `NOTICE`, `README.md`, and `CHANGELOG.md`. The Renovate / Dependabot config ([`.github/dependabot.yml`](/.github/dependabot.yml), [`renovate.json`](/renovate.json)) updates npm + GitHub Actions dependencies weekly.
+[`.github/CODEOWNERS`](/.github/CODEOWNERS) assigns `@code-yeongyu` as the default code owner for the repo, with explicit ownership for `.github/workflows/*`, `package.json`, `package-lock.json`, `LICENSE`, `NOTICE`, `README.md`, and `CHANGELOG.md`. The Renovate config ([`renovate.json`](/renovate.json)) updates npm + GitHub Actions dependencies weekly; the repo no longer carries a Dependabot config.
 
 ## Change-oriented guidance
 
