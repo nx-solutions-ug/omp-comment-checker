@@ -69,8 +69,72 @@ jobs:
       - name: Verify the integrity of provenance attestations and registry signatures for installed dependencies
         run: npm audit signatures
 
+      - name: Capture latest tag before release
+        id: pre-tag
+        run: |
+          set -euo pipefail
+          TAG=$(git tag --sort=-creatordate | sed -n "1p" || echo "")
+          echo "latest_tag=$TAG" >> "$GITHUB_OUTPUT"
+
       - name: Run semantic-release
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npx semantic-release
+
+      - name: Update release with full changelog
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          REPO="${{ github.repository }}"
+
+          # Derive latest tag from local repo (avoids API eventual-consistency race)
+          LATEST_TAG=$(git tag --sort=-creatordate | sed -n "1p")
+          if [ -z "$LATEST_TAG" ]; then
+            echo "No tags found, skipping changelog update."
+            exit 0
+          fi
+
+          # Skip if no new release was created (tag unchanged)
+          PRE_TAG="${{ steps.pre-tag.outputs.latest_tag }}"
+          if [ "$LATEST_TAG" = "$PRE_TAG" ]; then
+            echo "No new release created (tag unchanged at $LATEST_TAG), skipping changelog update."
+            exit 0
+          fi
+
+          # Find the previous tag (second-most-recent by creatordate)
+          PREVIOUS_TAG=$(git tag --sort=-creatordate | sed -n '2p' || echo "")
+
+          # Build full commit list since previous tag (or all commits if first release)
+          if [ -z "$PREVIOUS_TAG" ]; then
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          else
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges "${PREVIOUS_TAG}..${LATEST_TAG}")
+          fi
+
+          # Build full release notes
+          {
+            echo "## What's Changed"
+            echo ""
+            echo "$COMMITS"
+          } > /tmp/full-release-notes.md
+
+          # GitHub release body API limit is 125000 bytes; truncate at 120000 to leave room for the truncation notice
+          NOTES_SIZE=$(wc -c < /tmp/full-release-notes.md | awk '{print $1}')
+          if [ "$NOTES_SIZE" -gt 120000 ]; then
+            # Truncate at the last complete line before 120000 bytes to avoid splitting a commit message
+            head -c 120000 /tmp/full-release-notes.md > /tmp/truncated-notes.md
+            if [ "$(tail -c 1 /tmp/truncated-notes.md | wc -l)" -eq 0 ]; then
+              sed -i '$ d' /tmp/truncated-notes.md
+            fi
+            {
+              echo ""
+              echo "---"
+              echo ""
+              echo "**Note:** Release notes truncated. See [CHANGELOG.md](https://github.com/${REPO}/blob/main/CHANGELOG.md) for the full changelog."
+            } >> /tmp/truncated-notes.md
+            gh release edit "$LATEST_TAG" --notes-file /tmp/truncated-notes.md --repo "$REPO" || { echo "Failed to update release notes" >&2; exit 1; }
+          else
+            gh release edit "$LATEST_TAG" --notes-file /tmp/full-release-notes.md --repo "$REPO" || { echo "Failed to update release notes" >&2; exit 1; }
+          fi
