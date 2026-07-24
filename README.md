@@ -2,7 +2,7 @@
   <img src="assets/banner-flux.png" alt="omp-comment-checker — Comment checker hook for oh-my-pi" width="100%" />
 </p>
 
-# omp-comment-checker
+
 
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
