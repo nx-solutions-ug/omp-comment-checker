@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.2.0...v1.2.1) (2026-07-24)
+
+
+### Bug Fixes
+
+* crop banner to 3:1 ratio for better README display ([55e700b](https://github.com/nx-solutions-ug/omp-comment-checker/commit/55e700b87773c983161254c4f54ce78513d44527))
+
 # [1.2.0](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.1.4...v1.2.0) (2026-07-24)
 
 
