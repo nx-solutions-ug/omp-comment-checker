@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.1.4...v1.2.0) (2026-07-24)
+
+
+### Features
+
+* add FLUX 2 Max generated README banner ([a5ba3a9](https://github.com/nx-solutions-ug/omp-comment-checker/commit/a5ba3a9bb808c7c6b64e7efe301b199445eaead6))
+
 ## [1.1.4](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.1.3...v1.1.4) (2026-07-22)
 
 
