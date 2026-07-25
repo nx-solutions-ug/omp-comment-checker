@@ -4,6 +4,9 @@
 
 # omp-comment-checker
 
+[![npm version](https://img.shields.io/npm/v/@chronova/omp-comment-checker.svg)](https://www.npmjs.com/package/@chronova/omp-comment-checker)
+[![CI](https://github.com/nx-solutions-ug/omp-comment-checker/actions/workflows/ci.yml/badge.svg)](https://github.com/nx-solutions-ug/omp-comment-checker/actions/workflows/ci.yml)
+[![Release](https://github.com/nx-solutions-ug/omp-comment-checker/actions/workflows/release.yml/badge.svg)](https://github.com/nx-solutions-ug/omp-comment-checker/actions/workflows/release.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Comment checker hook for
