@@ -21,7 +21,7 @@ No Bun APIs are used; runtime is Node only.
 
 | Command | What it does |
 |---------|--------------|
-| `npm test` | Run vitest once. |
+| `npm test` | Run vitest once (also covers `test/stream-log.test.ts`). |
 | `npm run test:watch` | Run vitest in watch mode. |
 | `npm run typecheck` | Strict TypeScript check with `tsgo --noEmit`. |
 | `npm run lint` | Run Biome check. |
@@ -30,6 +30,7 @@ No Bun APIs are used; runtime is Node only.
 | `npm pack --dry-run` | Release package smoke test. |
 | `omp -e ./src/index.ts` | Load the extension into a local oh-my-pi session. |
 | `pi -e ./src/index.ts` | Load the extension into a local pi session. |
+| `python3 .omp/stream-log.py` | Pipe OMP JSONL output into a human-readable CI log. |
 
 ## Code style
 
@@ -50,6 +51,9 @@ src/
   cli.ts      — comment-checker binary resolution and execution
   omp.ts      — oh-my-pi backend capability detection
   self-heal.ts — in-memory warning store
+
+.omp/
+  stream-log.py — CI helper that formats OMP JSONL output into readable log lines
 
 test/
   *.test.ts   — vitest coverage for the corresponding src modules
