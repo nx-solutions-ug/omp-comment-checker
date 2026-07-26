@@ -1,0 +1,9 @@
+{
+  "hosts": {
+    "chronova.dev": {
+      "host": "46.224.132.7",
+      "username": "root",
+      "keyPath": "/home/dev/.ssh/id_rsa"
+    }
+  }
+}
