@@ -9,6 +9,8 @@ tags: [quickstart, install, omp, pi, comment-checker]
 
 This page covers installing the extension into an agent session, loading it for a one-shot test, and confirming it can reach the native checker binary.
 
+The package is published as [`@chronova/omp-comment-checker`](https://www.npmjs.com/package/@chronova/omp-comment-checker) on npm, released under the MIT license, and ships with CI and release automation via GitHub Actions. The repository README displays npm version, CI, release, and license badges.
+
 ## Install the package
 
 The package is published as `@chronova/omp-comment-checker`.
