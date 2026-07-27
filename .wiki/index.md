@@ -10,5 +10,6 @@ description: "Files and subdirectories in Wiki."
 
 # Directories
 
+- [automation](automation/)
 - [behavior](behavior/)
 - [development](development/)

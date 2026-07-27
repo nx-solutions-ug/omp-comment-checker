@@ -35,6 +35,8 @@ Only `write` and `edit` are handled. The handler may return `{ block: true, reas
 
 Handles `write`, `edit`, `multiedit` / `multi_edit`, `apply_patch`, and omp `edit` modes via `details.perFileResults`. The handler may return mutated `content` and `isError: true`.
 
+Post-exec extraction is skipped when the result is already marked `isError: true` or when the content looks like a failure (`isToolFailureOutput`).
+
 ### `session_start`
 
 Clears the in-memory `SelfHealStore`.

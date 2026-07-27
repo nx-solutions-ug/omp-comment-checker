@@ -64,6 +64,10 @@ This makes the tool result look like a failure, forcing the LLM to react even th
 
 Pass `skipCommentCheck: true` in the tool input to bypass the pre-exec check for that call. Post-exec checks do not currently honor this flag.
 
+## Failure detection
+
+Post-exec checks are skipped when the tool result already looks like a failure. `isToolFailureOutput` returns `true` for text starting with `error`, containing `error:`, `failed to`, or `could not`. This avoids piling comment warnings on top of an already-broken tool call.
+
 ## Checker exit-code handling
 
 | Exit code | Meaning | Effect |
