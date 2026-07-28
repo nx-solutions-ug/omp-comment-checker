@@ -29,7 +29,8 @@ For `write` and `edit` only:
 2. If the binary is missing, the tool call proceeds unchanged.
 3. If the input contains `skipCommentCheck: true`, the check is skipped for that call.
 4. The checker runs against the proposed content.
-5. On exit code `2` (warning), the call is blocked and a `reason` is returned.
+5. Empty warning messages are ignored.
+6. On exit code `2` (warning), the call is blocked and a `reason` is returned.
 
 The host aborts the tool call before the file is written. The rejection reason is fed back to the LLM so it can self-correct on the next turn.
 
@@ -45,8 +46,10 @@ return {
 For all intercepted tools:
 
 1. The extension extracts the affected files and final text from the tool result.
-2. The checker runs against that text.
-3. On exit code `2`, the warning message is appended to the result content and `isError` is set to `true`.
+2. If the result already looks like a failure (e.g. text starting with "error" or containing "error:", "failed to", or "could not"), the check is skipped.
+3. The checker runs against that text.
+4. Empty warning messages are ignored.
+5. On exit code `2`, the warning message is appended to the result content and `isError` is set to `true`.
 
 ```ts
 return {
@@ -62,7 +65,7 @@ This makes the tool result look like a failure, forcing the LLM to react even th
 
 ## Opt-out
 
-Pass `skipCommentCheck: true` in the tool input to bypass the pre-exec check for that call. Post-exec checks do not currently honor this flag.
+Pass `skipCommentCheck: true` in the tool input to bypass the pre-exec check for that call. Post-exec checks do not honor this flag; they are only skipped when the result is already a failure.
 
 ## Checker exit-code handling
 
