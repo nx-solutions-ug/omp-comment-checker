@@ -37,7 +37,7 @@ If the tool result contains `details.perFileResults` (or `details.files`), the o
 }
 ```
 
-For `perFileResults`, `oldText` is looked up under `oldText`, `old_text`, `oldString`, or `old_string`. `newText` uses the `new*` variants. If `oldText` is empty, the request is treated as a `Write`.
+For `perFileResults`, `oldText` is looked up under `oldText`, `old_text`, `oldString`, or `old_string`. `newText` uses the `new*` variants. If `oldText` is empty, the request is treated as a `Write`. Entries with `success: false` are skipped.
 
 ## `multiedit` / `multi_edit`
 
@@ -84,4 +84,4 @@ The parser joins collected lines with newlines and emits a trailing newline, mat
 
 ## Failure detection
 
-Post-exec checks are skipped when the tool result already looks like a failure. `isToolFailureOutput` returns `true` for text starting with "error", containing "error:", "failed to", or "could not". This avoids piling comment warnings on top of an already-broken tool call.
+Post-exec checks are skipped when the tool result already looks like a failure. `isToolFailureOutput` returns `true` for text starting with "error", containing "error:", "failed to", or "could not". This avoids piling comment warnings on top of an already-broken tool call. The same logic also skips checking when the tool result is already marked `isError`.

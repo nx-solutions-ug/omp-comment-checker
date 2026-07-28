@@ -29,11 +29,11 @@ The extension detects omp capabilities at runtime. If `appendEntry` / `sendMessa
 
 ### `tool_call`
 
-Only `write` and `edit` are handled. The handler may return `{ block: true, reason }` to abort the tool call before execution.
+Only `write` and `edit` are handled. The handler may return `{ block: true, reason }` to abort the tool call before execution. It also skips the check when the input contains `skipCommentCheck: true`.
 
 ### `tool_result`
 
-Handles `write`, `edit`, `multiedit` / `multi_edit`, `apply_patch`, and omp `edit` modes via `details.perFileResults`. The handler may return mutated `content` and `isError: true`.
+Handles `write`, `edit`, `multiedit` / `multi_edit`, `apply_patch`, and omp `edit` modes via `details.perFileResults`. The handler may return mutated `content` and `isError: true`. It skips checking when the result is already marked `isError` or its text looks like a tool failure.
 
 ### `session_start`
 
@@ -62,7 +62,7 @@ These types are kept minimal to avoid coupling the package back to host internal
 comment-checker check [--prompt <custom>]
 ```
 
-The checker receives the `CommentCheckerHookInput` as JSON on stdin and exits:
+The optional `--prompt` argument is only used when a caller passes a custom prompt via `RunCommentCheckerOptions.customPrompt`; the extension itself does not currently pass one. The checker receives the `CommentCheckerHookInput` as JSON on stdin and exits:
 
 - `0` — no comment problems.
 - `2` — warning; stderr/stdout contains the message.
