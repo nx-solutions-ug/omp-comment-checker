@@ -77,4 +77,6 @@ These are driven by `.omp/commands/*.md` prompt files and are not part of the ex
 
 `omp.yml` listens for issue and PR review comments starting with `/omp` (or `/oc`). It expands either a named command file from `.omp/commands/<command>.md` or treats the remainder as a freeform prompt.
 
+The workflow first reacts to the triggering comment with an `:eyes:` GitHub reaction so users can see the request was acknowledged. It uses the appropriate API endpoint for issue comments versus pull-request review comments, authenticating with the chronova-agent app token.
+
 For freeform prompts posted on PR comments, the workflow appends `.omp/commands/_pr-commit-push.md`. This instructs the agent to check out the PR branch, apply the requested changes, run relevant quality gates, and **commit and push the result back to the PR branch** before finishing. It prevents the agent from leaving changes staged only in the runner (added in PR #57).
