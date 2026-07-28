@@ -1,3 +1,22 @@
+# [1.3.0](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.2.1...v1.3.0) (2026-07-28)
+
+
+### Bug Fixes
+
+* **ci:** cancel omp-ci workflows when PR is merged ([4bcf154](https://github.com/nx-solutions-ug/omp-comment-checker/commit/4bcf154e61923d02a6f41e6114e827f153199f86))
+* include APPROVED state in review thread dedup filter ([681c477](https://github.com/nx-solutions-ug/omp-comment-checker/commit/681c4776108a540748b0cbd7f1a94d5770f4b9a7))
+* **issue-76:** prevent stream-log.py from crashing on non-dict args or non-string text ([d4c937a](https://github.com/nx-solutions-ug/omp-comment-checker/commit/d4c937a68b0cd6d6b368635a01b714ba60305767))
+* **omp:** ensure /omp PR commands commit and push changes ([#57](https://github.com/nx-solutions-ug/omp-comment-checker/issues/57)) ([0623173](https://github.com/nx-solutions-ug/omp-comment-checker/commit/0623173c7a844fbbda875d0ac7ac22fa409b789b)), closes [nx-solutions-ug/chronova#637](https://github.com/nx-solutions-ug/chronova/issues/637)
+* replace Promise.withResolvers with new Promise for ES2022 lib compatibility ([#64](https://github.com/nx-solutions-ug/omp-comment-checker/issues/64)) ([209b2a5](https://github.com/nx-solutions-ug/omp-comment-checker/commit/209b2a5296b71e6e4d3e6ea492b6ce9fb8438ee5))
+* resolve review threads and approve PR when all findings addressed ([7f1411c](https://github.com/nx-solutions-ug/omp-comment-checker/commit/7f1411c48c8493e29bb1733849fbe4617955e928))
+* update actions/checkout to v7 in vouch-manage workflow ([3922f85](https://github.com/nx-solutions-ug/omp-comment-checker/commit/3922f85d0a775bf6fb281cd3f603aec4a015dffe))
+
+
+### Features
+
+* add eyes reaction to /omp trigger comments ([7d098ce](https://github.com/nx-solutions-ug/omp-comment-checker/commit/7d098ce65b62583c7be9097f4719242230ecf576))
+* add lightweight vouch system for PR gating via discussions ([4345a99](https://github.com/nx-solutions-ug/omp-comment-checker/commit/4345a998c7e671bd2445867beab0182ac9c3395f))
+
 ## [1.2.1](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.2.0...v1.2.1) (2026-07-24)
 
 
