@@ -78,3 +78,7 @@ These are driven by `.omp/commands/*.md` prompt files and are not part of the ex
 `omp.yml` listens for issue and PR review comments starting with `/omp` (or `/oc`). It expands either a named command file from `.omp/commands/<command>.md` or treats the remainder as a freeform prompt.
 
 For freeform prompts posted on PR comments, the workflow appends `.omp/commands/_pr-commit-push.md`. This instructs the agent to check out the PR branch, apply the requested changes, run relevant quality gates, and **commit and push the result back to the PR branch** before finishing. It prevents the agent from leaving changes staged only in the runner (added in PR #57).
+
+### PR close handling (`omp-ci.yml`)
+
+`omp-ci.yml` also reacts to `pull_request` `closed` events. When a PR is merged or closed, dedicated `cancel-review-on-close` and `cancel-label-on-close` jobs acquire the concurrency groups used by the `review-pr` and `label-pr` jobs, forcing any in-progress agent runs for that PR to cancel. This prevents agents from continuing to review or label a PR after it has already been merged (added in commit `4bcf154`).
