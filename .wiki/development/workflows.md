@@ -11,18 +11,18 @@ All repository automation lives under `.github/workflows`. Most write operations
 
 ## CI (`ci.yml`)
 
-Runs on pushes and pull requests to `main`, plus manual dispatch.
+Runs on pushes and pull requests to `main`, plus manual dispatch. The matrix was moved from Node `20`/`22` to `24`/`25` in PR #64, and `package.json` now requires `node >=24.0.0`.
 
-- Matrix: `ubuntu-latest` and `macos-latest` × Node `20` and `22`.
+- Matrix: `ubuntu-latest` and `macos-latest` × Node `24` and `25`.
 - Steps: `npm ci`, `npm run check` (typecheck + Biome), `npm test`, `npm pack --dry-run`.
 
 This is the only workflow that does not need an app token; it only reads repository contents.
 
 ## Release (`release.yml`)
 
-Runs on every push to `main`, `beta`, and `alpha` as configured in `.releaserc.json`.
+Triggered on pushes to `main` (`.github/workflows/release.yml` only lists `main`); `.releaserc.json` is also configured for `beta` and `alpha` prerelease branches, so adding those branches to the workflow trigger would enable prerelease automation.
 
-1. Runs `npm run typecheck` and `npm run lint`.
+1. Runs `npm run typecheck` and `npm run lint` (Biome, not ESLint).
 2. Generates an app token for `semantic-release`.
 3. Invokes `npx semantic-release` to bump `package.json`/`package-lock.json`, write `CHANGELOG.md`, publish to npm, and create a GitHub release.
 4. Rebuilds the release body from the full commit range between the previous tag and the new tag. If the tag did not change, the step exits early; if the body exceeds 120,000 bytes, it is truncated at the last complete line and links to `CHANGELOG.md`.
@@ -71,7 +71,7 @@ The repository also ships agent automation for the oh-my-pi runtime:
 - `omp-fix-issue.yml` — attempts to fix an issue via the oh-my-pi agent and opens a PR.
 - `omp.yml` — general oh-my-pi integration workflow.
 
-These are driven by `.omp/commands/*.md` prompt files and are not part of the extension package itself.
+These are driven by `.omp/commands/*.md` prompt files and `.omp/stream-log.py` (a Python formatter that consumes the JSON event stream produced by `omp -p --mode json`). They are not part of the extension package itself.
 
 ### `/omp` PR comment handling (`omp.yml`)
 

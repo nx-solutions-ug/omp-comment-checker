@@ -15,7 +15,7 @@ This is a strict TypeScript / ESM Node package. It uses vitest for tests, Biome 
 npm install
 ```
 
-No Bun APIs are used; runtime is Node only.
+No Bun APIs are used; runtime is Node only. Requires Node.js `>=24.0.0` per `package.json` `engines`.
 
 ## Common commands
 
@@ -35,7 +35,8 @@ No Bun APIs are used; runtime is Node only.
 
 From `AGENTS.md`:
 
-- TypeScript strict mode, no `any`, no `@ts-ignore`, no `@ts-expect-error`, no enums.
+- TypeScript strict mode with `tsconfig.json` `lib: ["ES2022"]`, so avoid ES2024+ globals such as `Promise.withResolvers`.
+- No `any`, no `@ts-ignore`, no `@ts-expect-error`, no enums.
 - ESM modules with `.js` suffix in import paths.
 - Tabs for indentation.
 - Double quotes for strings.
@@ -57,6 +58,6 @@ test/
 
 ## Release
 
-Releases run automatically on pushes to `main`, `beta`, and `alpha` as configured in `.releaserc.json`. The `.github/workflows/release.yml` workflow first runs `npm run typecheck` and `npm run lint`, then generates a chronova-agent GitHub App token and invokes `npx semantic-release` to bump the version, publish to npm, and create a GitHub release. The `.releaserc.json` release notes template already truncates at 120,000 bytes and links to `CHANGELOG.md` if longer; the workflow's follow-up release-body step is present but exits early when the tag does not change. The package is configured for npm provenance in `package.json`.
+Releases run via `.releaserc.json` branches `main`, `beta`, and `alpha`. The `.github/workflows/release.yml` workflow currently only triggers on `main`; `.releaserc.json` supports `beta` and `alpha` prerelease branches if the workflow trigger is expanded. The workflow first runs `npm run typecheck` and `npm run lint`, then generates a chronova-agent GitHub App token and invokes `npx semantic-release` to bump the version, publish to npm, and create a GitHub release. The `.releaserc.json` release notes template already truncates at 120,000 bytes and links to `CHANGELOG.md` if longer; the workflow's follow-up release-body step is present but exits early when the tag does not change. The package is configured for npm provenance in `package.json`.
 
 For details on the full workflow set, including the vouch gate, wiki update, and auto-manage jobs, see [GitHub Actions workflows](workflows.md).
