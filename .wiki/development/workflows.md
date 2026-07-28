@@ -73,8 +73,19 @@ The repository also ships agent automation for the oh-my-pi runtime:
 
 These are driven by `.omp/commands/*.md` prompt files and are not part of the extension package itself.
 
+### Automated PR review (`review-pr`)
+
+The `review-pr` job in `omp-ci.yml` runs on PR `opened`, `synchronize`, and `ready_for_review` events (and via `workflow_dispatch`). It uses the prompt in `.omp/commands/review-pr.md` and the `agynio/gh-pr-review` `gh` extension to post inline review comments.
+
+Key behaviors:
+
+- **Dedup against prior bot reviews** — before reviewing, it checks existing reviews from `chronova-agent` or `omp-agent`. If unresolved threads exist, it compares their path/line against the current diff and only proceeds if some threads are still relevant.
+- **Resolve and approve when all findings are addressed** — if every prior unresolved thread is now resolved or the code at those lines has changed to address the findings, the bot resolves all unresolved threads and submits an `APPROVE` review.
+- **Skip agent commits on synchronize** — when a PR is synchronized, the workflow skips re-review if the latest commit was authored by a bot or GitHub Actions (`opencode-agent`, `github-actions`, `omp-agent`, `chronova-agent`).
+- **PR author classification** — dependency PRs from `renovate[bot]`/`dependabot[bot]` get a dependency summary comment; other bot-authored and human-authored PRs are reviewed inline with `REQUEST_CHANGES` or `APPROVE`.
+
 ### `/omp` PR comment handling (`omp.yml`)
 
 `omp.yml` listens for issue and PR review comments starting with `/omp` (or `/oc`). It expands either a named command file from `.omp/commands/<command>.md` or treats the remainder as a freeform prompt.
 
-For freeform prompts posted on PR comments, the workflow appends `.omp/commands/_pr-commit-push.md`. This instructs the agent to check out the PR branch, apply the requested changes, run relevant quality gates, and **commit and push the result back to the PR branch** before finishing. It prevents the agent from leaving changes staged only in the runner (added in PR #57).
+For freeform prompts posted on PR comments, the workflow appends `.omp/commands/_pr-commit-push.md`. This instructs the agent to check out the PR branch, apply the requested changes, run relevant quality gates, and **commit and push the result back to the PR branch** before finishing. It prevents the agent from leaving changes staged only in the runner (added in PR #636).
