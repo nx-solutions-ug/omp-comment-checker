@@ -57,6 +57,6 @@ test/
 
 ## Release
 
-Releases run automatically on pushes to `main`, `beta`, and `alpha` as configured in `.releaserc.json`. The `.github/workflows/release.yml` workflow first runs `npm run typecheck` and `npm run lint`, then generates a chronova-agent GitHub App token and invokes `npx semantic-release` to bump the version, publish to npm, and create a GitHub release. The `.releaserc.json` release notes template already truncates at 120,000 bytes and links to `CHANGELOG.md` if longer; the workflow's follow-up release-body step is present but exits early when the tag does not change. The package is configured for npm provenance in `package.json`.
+Releases run automatically on pushes to `main`; `.releaserc.json` also declares `beta` and `alpha` release branches, but the workflow trigger is currently scoped to `main` only. The `.github/workflows/release.yml` workflow first runs `npm run typecheck` and `npm run lint`, then generates a chronova-agent GitHub App token and invokes `npx semantic-release` to bump the version, publish to npm, and create a GitHub release. The `.releaserc.json` release notes template already truncates at 120,000 bytes and links to `CHANGELOG.md` if longer; the workflow's follow-up release-body step is present but exits early when the tag does not change. The package is configured for npm provenance in `package.json`.
 
 For details on the full workflow set, including the vouch gate, wiki update, and auto-manage jobs, see [GitHub Actions workflows](workflows.md).

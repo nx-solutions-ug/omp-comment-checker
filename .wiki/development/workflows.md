@@ -13,14 +13,14 @@ All repository automation lives under `.github/workflows`. Most write operations
 
 Runs on pushes and pull requests to `main`, plus manual dispatch.
 
-- Matrix: `ubuntu-latest` and `macos-latest` × Node `20` and `22`.
-- Steps: `npm ci`, `npm run check` (typecheck + Biome), `npm test`, `npm pack --dry-run`.
+- Matrix: `ubuntu-latest` and `macos-latest` × Node `24` and `25`.
+- Steps: `npm ci`, `npm run check` (tsgo + biome), `npm test`, `npm pack --dry-run`.
 
 This is the only workflow that does not need an app token; it only reads repository contents.
 
 ## Release (`release.yml`)
 
-Runs on every push to `main`, `beta`, and `alpha` as configured in `.releaserc.json`.
+Runs on every push to `main`. The `.releaserc.json` configuration also declares `beta` and `alpha` release branches, but the workflow trigger is currently scoped to `main` only.
 
 1. Runs `npm run typecheck` and `npm run lint`.
 2. Generates an app token for `semantic-release`.
