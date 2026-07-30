@@ -75,12 +75,12 @@ Each metadata item must have `filePath`/`file_path`/`path`, `before`/`old`/`oldS
 The fallback parser scans lines for:
 
 - `*** Add File: <path>` — turns into a `Write` with all `+` lines joined as content.
-- `*** Update File: <path>` — turns into an `Edit` with `-` lines as `old_string` and `+` lines as `new_string`.
+- `*** Update File: <path>` — turns into an `Edit` with `-` lines as `old_string` and `+` lines as `new_string`. The edit's target path is the `*** Move to:` path if one appears inside the update block, otherwise the original update path.
 - `*** Delete File: <path>` — ignored.
-- `*** Move to: <path>` — updates `movePath` for the current accumulator.
+- `*** Move to: <path>` — applies only to the current `*** Update File:` accumulator.
 - `@@` lines and `*** Begin/End Patch` markers are ignored.
 
-The parser joins collected lines with newlines and emits a trailing newline, matching the checker binary's expected shape.
+The parser joins collected lines with newlines and emits a trailing newline, matching the checker binary's expected shape. Empty `+` content causes an add or update request to be skipped.
 
 ## Failure detection
 

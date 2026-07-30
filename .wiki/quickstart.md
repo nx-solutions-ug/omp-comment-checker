@@ -63,7 +63,7 @@ The package entry is declared in `package.json` under the `"pi"` key:
 
 ## Verify the checker binary
 
-The extension depends on the native binary shipped by `@code-yeongyu/comment-checker`. If the binary is missing, the hook is a no-op and the command prints setup guidance.
+The extension depends on the native binary shipped by `@code-yeongyu/comment-checker`. If the binary is missing, the hook is a no-op and the slash command surfaces setup guidance through the host's notification UI.
 
 Run the built-in status command inside an interactive session:
 
@@ -71,13 +71,21 @@ Run the built-in status command inside an interactive session:
 /omp-comment-checker
 ```
 
-If the binary is present and there are no pending warnings, it prints:
+If the binary is present and there are no pending warnings, the host is notified:
 
 ```text
 omp-comment-checker: no pending warnings.
 ```
 
-If the binary is missing, it prints:
+If there are unfired self-heal warnings, the command shows the count and the list of affected files:
+
+```text
+2 pending warning(s):
+src/index.ts: avoid vague comments like "TODO"
+src/core.ts: ...
+```
+
+If the binary is missing, it notifies:
 
 ```text
 omp-comment-checker binary missing; reinstall @code-yeongyu/comment-checker.
