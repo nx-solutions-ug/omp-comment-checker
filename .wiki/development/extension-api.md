@@ -56,7 +56,14 @@ These types are kept minimal to avoid coupling the package back to host internal
 
 ## Native checker contract
 
-`cli.ts` spawns the `comment-checker` binary with:
+`cli.ts` resolves the `comment-checker` binary in two steps:
+
+1. Call the `@code-yeongyu/comment-checker` package export `getBinaryPath()` if it exists.
+2. Fall back to `node_modules/@code-yeongyu/comment-checker/bin/comment-checker` (with `.exe` on Windows).
+
+If neither resolves, the run returns `status: "missing"` and the extension leaves the tool output unchanged.
+
+Once resolved, `cli.ts` spawns the binary with:
 
 ```bash
 comment-checker check [--prompt <custom>]
@@ -68,4 +75,4 @@ The optional `--prompt` argument is only used when a caller passes a custom prom
 - `2` — warning; stderr/stdout contains the message.
 - anything else — treated as an error by the extension.
 
-Process output is capped at 64 KiB and the process times out after 30 seconds.
+Process output is capped at `MAX_PROCESS_OUTPUT_BYTES` (64 KiB) and the process times out after `PROCESS_TIMEOUT_MS` (30 seconds). Truncation is UTF-8 aware, and a timeout reason is preserved even if the output limit is reached.
