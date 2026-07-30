@@ -23,7 +23,7 @@ This only works under oh-my-pi. On plain pi the self-heal path is a no-op and be
 
 ## Store semantics
 
-`SelfHealStore` keeps warnings in a `Map<string, WarningRecord>` keyed by UUID. A warning is considered:
+`SelfHealStore` keeps warnings in a `Map<string, WarningRecord>` keyed by UUID. A record includes `id`, `filePath`, `message`, `sourceToolName`, `ts`, and `fired`. A warning is considered:
 
 - **unfired** until `markFired(ids)` is called with its id.
 - **cleared** on `session_start` (memory only; persisted session entries may remain on disk depending on the host).
@@ -32,7 +32,7 @@ This only works under oh-my-pi. On plain pi the self-heal path is a no-op and be
 
 ## Host capability detection
 
-`createOmpBackend(pi)` checks whether `pi` has `appendEntry`, `sendMessage`, or `on`. If none are present, `available` is `false` and every backend method is a no-op. This makes the self-heal path safe on plain pi.
+`createOmpBackend(pi)` checks whether `pi` has `appendEntry`, `sendMessage`, or `on`. If none are present, `available` is `false` and every backend method is a no-op. `onSessionCompact` only registers a handler when `api.on` exists, otherwise it returns a no-op cleanup function. This makes the self-heal path safe on plain pi.
 
 ## Re-injected message format
 

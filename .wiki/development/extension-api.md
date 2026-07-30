@@ -15,15 +15,18 @@ export default function ompCommentCheckerExtension(pi: unknown): void;
 
 ## Required host API
 
-The extension only uses three host APIs:
+The extension consumes these host APIs:
 
-| Method | Purpose |
-|--------|---------|
+| API | Purpose |
+|-----|---------|
 | `pi.on(event, handler)` | Subscribe to `session_start`, `tool_call`, `tool_result`, and `session_compact`. |
 | `pi.registerCommand(name, spec)` | Register the `/omp-comment-checker` status command. |
-| `pi` optionally exposes `appendEntry`, `sendMessage`, and `on("session_compact", ...)` for the omp self-heal path. |
+| `ctx.cwd` | Resolve relative paths for the checker input. |
+| `ctx.sessionManager` | Optional; supplies the session id via `getSessionId()` or `getHeader().id`. |
+| `ctx.ui.notify` | Optional; used by the `/omp-comment-checker` slash command to surface status. |
+| `pi.appendEntry` / `pi.sendMessage` | Optional omp-only APIs used by the self-heal path. |
 
-The extension detects omp capabilities at runtime. If `appendEntry` / `sendMessage` / `session_compact` are absent, the self-heal path is a no-op.
+The extension detects omp capabilities at runtime in `createOmpBackend(pi)`. If `appendEntry` and `sendMessage` are absent, the self-heal path is a no-op.
 
 ## Event handlers
 
@@ -41,15 +44,17 @@ Clears the in-memory `SelfHealStore`.
 
 ### `session_compact`
 
-Under omp, re-injects unfired warnings through `sendMessage` with `triggerTurn: false`.
+Under omp, re-injects unfired warnings through `sendMessage` with `triggerTurn: false`. The handler is registered via `backend.onSessionCompact`, which only subscribes to `session_compact` when the host supports it.
 
 ## Type definitions
 
 The extension internally defines lightweight "like" types so it does not hard-depend on either `@oh-my-pi/pi-coding-agent` or `@mariozechner/pi-coding-agent` internal module shapes:
 
-- `ExtensionApiLike` — the host API surface.
-- `ExtensionContextLike` — `cwd`, optional `sessionManager`, and `ui.notify`.
-- `ToolCallLike` / `ToolResultLike` — minimal tool event shapes.
+- `ExtensionApiLike` — the host API surface (`on`, `registerCommand`).
+- `ExtensionContextLike` — `cwd`, optional `sessionManager`, and optional `ui.notify`.
+- `ToolCallLike` / `ToolResultLike` — minimal tool event shapes; `ToolResultLike` also carries an optional `details` object for omp edit-tool metadata.
+- `OmpPerFileEditResult` — shape extracted from `details.perFileResults` / `details.files`, with `filePath`, optional `movePath`, `oldText`, `newText`, and `success`.
+- `ApplyPatchFileMetadata` — shape extracted from OMO-compatible metadata for `apply_patch`.
 - `CommentCheckerHookInput` — the JSON payload sent to the native checker binary.
 
 These types are kept minimal to avoid coupling the package back to host internals.
@@ -75,4 +80,4 @@ The optional `--prompt` argument is only used when a caller passes a custom prom
 - `2` — warning; stderr/stdout contains the message.
 - anything else — treated as an error by the extension.
 
-Process output is capped at `MAX_PROCESS_OUTPUT_BYTES` (64 KiB) and the process times out after `PROCESS_TIMEOUT_MS` (30 seconds). Truncation is UTF-8 aware, and a timeout reason is preserved even if the output limit is reached.
+Process output is capped at `MAX_PROCESS_OUTPUT_BYTES` (64 KiB) and the process times out after `PROCESS_TIMEOUT_MS` (30 seconds). Truncation is UTF-8 aware and preserves whole characters, and a timeout reason is written to stderr even if the output limit is reached.

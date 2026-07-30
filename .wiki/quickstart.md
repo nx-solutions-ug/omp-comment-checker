@@ -39,6 +39,16 @@ You can also pin it in `~/.omp/settings.json`:
 
 After installation, restart the agent or run `/reload` in the interactive session.
 
+The package entry is declared in `package.json` under the `"pi"` key:
+
+```json
+"pi": {
+  "extensions": [
+    "./src/index.ts"
+  ]
+}
+```
+
 ## Dev / one-shot load
 
 For local development or debugging, point the agent directly at `src/index.ts`:
@@ -49,16 +59,6 @@ omp -e /path/to/omp-comment-checker/src/index.ts
 
 # upstream pi
 pi -e /path/to/omp-comment-checker/src/index.ts
-```
-
-The package entry is declared in `package.json` under the `"pi"` key:
-
-```json
-"pi": {
-  "extensions": [
-    "./src/index.ts"
-  ]
-}
 ```
 
 ## Verify the checker binary
@@ -90,6 +90,8 @@ If the binary is missing, it notifies:
 ```text
 omp-comment-checker binary missing; reinstall @code-yeongyu/comment-checker.
 ```
+
+The command is registered via `pi.registerCommand("omp-comment-checker", ...)` in `src/index.ts`.
 
 ## Quick smoke test
 

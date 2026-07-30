@@ -67,6 +67,10 @@ This makes the tool result look like a failure, forcing the LLM to react even th
 
 Pass `skipCommentCheck: true` in the tool input to bypass the pre-exec check for that call. Post-exec checks do not honor this flag; they are only skipped when the result is already a failure.
 
+## `session_compact` re-injection
+
+When post-exec produces a warning, the `onWarning` callback persists it to the session. On the next `session_compact` event, all unfired warnings are summarized and sent to the LLM via `sendMessage(..., { triggerTurn: false })`, then marked as fired. See [Self-heal loop](self-heal.md) for full details.
+
 ## Checker exit-code handling
 
 | Exit code | Meaning | Effect |

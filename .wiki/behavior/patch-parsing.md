@@ -80,8 +80,8 @@ The fallback parser scans lines for:
 - `*** Move to: <path>` — applies only to the current `*** Update File:` accumulator.
 - `@@` lines and `*** Begin/End Patch` markers are ignored.
 
-The parser joins collected lines with newlines and emits a trailing newline, matching the checker binary's expected shape. Empty `+` content causes an add or update request to be skipped.
+The parser joins collected lines with newlines and emits a trailing newline, matching the checker binary's expected shape. Empty `+` content causes an add or update request to be skipped. `parseApplyPatchRequests` is exported so it can be unit tested directly.
 
 ## Failure detection
 
-Post-exec checks are skipped when the tool result already looks like a failure. `isToolFailureOutput` returns `true` for text starting with "error", containing "error:", "failed to", or "could not". This avoids piling comment warnings on top of an already-broken tool call. The same logic also skips checking when the tool result is already marked `isError`.
+Post-exec checks are skipped when the tool result already looks like a failure. `isToolFailureOutput` is exported and returns `true` for text starting with "error", containing "error:", "failed to", or "could not". This avoids piling comment warnings on top of an already-broken tool call. The same logic also skips checking when the tool result is already marked `isError`.
