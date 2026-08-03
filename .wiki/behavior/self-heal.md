@@ -9,15 +9,15 @@ tags: [behavior, self-heal, omp, session_compact, appendEntry, sendMessage]
 
 When a warning fires on a post-exec tool result, the file has already been written. The extension therefore persists the warning and re-injects it later so the LLM cannot lose track of it.
 
-This only works under oh-my-pi. On plain pi the self-heal path is a no-op and behavior matches the upstream v0.1.0 fork.
+This only works under oh-my-pi. On plain pi the self-heal path is a no-op because `appendEntry`/`sendMessage` are absent and `session_compact` does not fire; behavior matches the upstream v0.1.0 fork.
 
 ## Lifecycle
 
 1. **Warning detected** — `tool_result` handler finds a warning for `write`, `edit`, `multiedit`, `apply_patch`, or the omp `edit` tool.
 2. **Record warning** — `SelfHealStore.record()` creates a `WarningRecord` with a random UUID and timestamp.
-3. **Persist to session** — `OmpBackend.appendEntry("omp-comment-checker:warning", record)` stores the warning as a custom session entry.
+3. **Persist to session** — `backend.appendEntry("omp-comment-checker:warning", record)` stores the warning as a custom session entry.
 4. **Session compaction** — when the host fires `session_compact`, the extension reads all unfired warnings from the store.
-5. **Re-inject context** — `OmpBackend.sendMessage(..., { triggerTurn: false })` sends a custom message summarizing the unfired warnings.
+5. **Re-inject context** — `backend.sendMessage(..., { triggerTurn: false })` sends a custom message summarizing the unfired warnings.
 6. **Mark fired** — the store marks those warnings as fired so they are not sent again.
 7. **Session start** — on `session_start`, the in-memory store is cleared.
 
@@ -32,7 +32,7 @@ This only works under oh-my-pi. On plain pi the self-heal path is a no-op and be
 
 ## Host capability detection
 
-`createOmpBackend(pi)` checks whether `pi` has `appendEntry`, `sendMessage`, or `on`. If none are present, `available` is `false` and every backend method is a no-op. `onSessionCompact` only registers a handler when `api.on` exists, otherwise it returns a no-op cleanup function. This makes the self-heal path safe on plain pi.
+`createOmpBackend(pi)` checks whether `pi` has `appendEntry`, `sendMessage`, or `on`. If none are present, `available` is `false` and every backend method is a no-op. The `session_compact` handler is registered with `api.on("session_compact", ...)`, but on plain pi the event never fires, so unfired warnings stay in memory. This makes the self-heal path safe on plain pi.
 
 ## Re-injected message format
 

@@ -37,7 +37,7 @@ You can also pin it in `~/.omp/settings.json`:
 }
 ```
 
-After installation, restart the agent or run `/reload` in the interactive session.
+After installation, restart the agent or run `/reload` in an interactive session.
 
 The package entry is declared in `package.json` under the `"pi"` key:
 
