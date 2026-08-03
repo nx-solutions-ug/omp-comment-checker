@@ -69,7 +69,7 @@ Pass `skipCommentCheck: true` in the tool input to bypass the pre-exec check for
 
 ## `session_compact` re-injection
 
-When post-exec produces a warning, the `onWarning` callback persists it to the session. On the next `session_compact` event, all unfired warnings are summarized and sent to the LLM via `sendMessage(..., { triggerTurn: false })`, then marked as fired. See [Self-heal loop](self-heal.md) for full details.
+When post-exec produces a warning, the `onWarning` callback persists it to the session. On the next `session_compact` event, all unfired warnings are summarized and sent to the LLM via `backend.sendMessage(..., { triggerTurn: false })`, then marked as fired. See [Self-heal loop](self-heal.md) for full details.
 
 ## Checker exit-code handling
 
@@ -79,4 +79,4 @@ When post-exec produces a warning, the `onWarning` callback persists it to the s
 | `2` | warning | block pre-exec, or mark post-exec result as error |
 | other / missing | error / missing | leave output unchanged, no self-heal entry |
 
-If the binary is missing or exits unexpectedly, the extension leaves the tool output untouched. This avoids false-positive tool failures.
+If the binary is missing or exits unexpectedly, the extension leaves the tool output untouched. This avoids false-positive tool failures. Process output is bounded at 64 KiB and killed after 30 seconds; timeout output is surfaced as the failure reason so the host can react.

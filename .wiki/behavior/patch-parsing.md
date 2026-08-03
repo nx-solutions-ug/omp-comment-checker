@@ -80,7 +80,7 @@ The fallback parser scans lines for:
 - `*** Move to: <path>` — applies only to the current `*** Update File:` accumulator.
 - `@@` lines and `*** Begin/End Patch` markers are ignored.
 
-The parser joins collected lines with newlines and emits a trailing newline, matching the checker binary's expected shape. Empty `+` content causes an add or update request to be skipped. `parseApplyPatchRequests` is exported so it can be unit tested directly.
+The parser joins collected lines with newlines and emits a trailing newline, matching the checker binary's expected shape. Empty `+` content causes an add or update request to be skipped. `parseApplyPatchRequests` is exported so it can be unit tested directly. Patch parsing is exercised in `test/core.test.ts`.
 
 ## Failure detection
 
