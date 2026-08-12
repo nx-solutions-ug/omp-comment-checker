@@ -26,7 +26,7 @@ Runs on every push to `main`. The `.releaserc.json` configuration also declares 
 1. Runs `npm run typecheck` and `npm run lint`.
 2. Generates an app token for `semantic-release`.
 3. Captures the latest tag before release.
-4. Invokes `npx semantic-release` to bump `package.json`/`package-lock.json`, write `CHANGELOG.md`, publish to npm, and create a GitHub release.
+4. Invokes `npx semantic-release` (currently v25.0.9) to bump `package.json`/`package-lock.json`, write `CHANGELOG.md`, publish to npm, and create a GitHub release.
 5. Rebuilds the release body from the full commit range between the previous tag and the new tag. If the tag did not change, the step exits early; if the body exceeds 120,000 bytes, it is truncated at the last complete line and links to `CHANGELOG.md`.
 
 The package is configured for npm provenance in `package.json`.

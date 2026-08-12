@@ -26,7 +26,7 @@ No Bun APIs are used; runtime is Node only. The CI matrix covers Node 24 and 25 
 | `npm run lint` | Run Biome check. |
 | `npm run lint:fix` | Run Biome check with auto-fixes. |
 | `npm run check` | `typecheck` followed by `biome check .`. |
-| `npm run semantic-release` | Run `semantic-release` locally (used by CI). |
+| `npm run semantic-release` | Run `semantic-release` locally (used by CI; currently resolves to v25.0.9). |
 | `npm pack --dry-run` | Release package smoke test. |
 | `npm run test:watch` | Run vitest in watch mode. |
 | `omp -e ./src/index.ts` | Load the extension into a local oh-my-pi session. |
