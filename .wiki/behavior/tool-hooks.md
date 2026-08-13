@@ -32,12 +32,23 @@ For `write` and `edit` only:
 5. Empty warning messages are ignored.
 6. On exit code `2` (warning), the call is blocked and a `reason` is returned.
 
-The host aborts the tool call before the file is written. The rejection reason is fed back to the LLM so it can self-correct on the next turn.
+The host aborts the tool call before the file is written. The rejection reason is fed back to the LLM so it can self-correct on the next turn. The reason explicitly names the blocked tool, the file path, states that the file was NOT modified, and shows the checker warning plus the override hint:
+
+```text
+omp-comment-checker blocked the write for src/example.ts; the file was NOT modified.
+Reason: <checker warning>
+
+To override for this call, re-run the tool with `skipCommentCheck: true` in its input.
+```
 
 ```ts
 return {
   block: true,
-  reason: "omp-comment-checker blocked 1 file(s): ...",
+  reason:
+    "omp-comment-checker blocked the write for src/example.ts; the file was NOT modified.\n" +
+    "Reason: <checker warning>\n" +
+    "\n" +
+    "To override for this call, re-run the tool with `skipCommentCheck: true` in its input.",
 };
 ```
 
@@ -65,7 +76,7 @@ This makes the tool result look like a failure, forcing the LLM to react even th
 
 ## Opt-out
 
-Pass `skipCommentCheck: true` in the tool input to bypass the pre-exec check for that call. Post-exec checks do not honor this flag; they are only skipped when the result is already a failure.
+Pass `skipCommentCheck: true` in the tool input to bypass the comment check for that call. Both the pre-exec (`tool_call`) and post-exec (`tool_result`) checks honor this flag. Post-exec checks are also skipped when the result is already a failure.
 
 ## `session_compact` re-injection
 

@@ -39,7 +39,7 @@ upstream 0.1.0 exactly.
 
 | Case | Result |
 |------|--------|
-| `write` / `edit` called (pre-exec) | blocks the call when the checker flags the proposed content; the LLM sees the rejection reason and self-corrects on the next turn |
+| `write` / `edit` called (pre-exec) | blocks the call when the checker flags the proposed content; the LLM sees an explicit rejection reason that names the blocked tool, the file path, states the file was NOT modified, includes the checker warning, and shows the `skipCommentCheck: true` override hint |
 | `write` succeeds | checks the written `content` |
 | `edit` succeeds | checks `oldString` / `newString` |
 | `multiedit` succeeds | checks the complete `edits` payload |
@@ -56,9 +56,12 @@ upstream 0.1.0 exactly.
 1. Mutation tool (write / edit / multiedit / apply_patch) is about to run.
 2. omp-comment-checker inspects the proposed content, runs the
    @code-yeongyu/comment-checker binary, exit code 2.
-3. If the binary flags the content, return { block: true, reason } so
+3. If the binary flags the content, return `{ block: true, reason }` so
    the host aborts the tool call before the file is written. The
-   rejection reason is fed back to the LLM so it can self-correct on
+   `reason` explicitly names the blocked tool, the file path, states
+   that the file was NOT modified, includes the checker warning, and
+   ends with `To override for this call, re-run the tool with
+   skipCommentCheck: true in its input.` so the LLM can self-correct on
    the next turn.
 4. If the binary passes, let the tool run. On the matching tool_result,
    re-run the checker against the post-mutation content for modes we
@@ -74,7 +77,10 @@ upstream 0.1.0 exactly.
 The `session_compact` listener only fires under omp. Under plain pi, the
 listener registration is skipped and the store is local-only.
 Per-call overrides: pass `skipCommentCheck: true` in the tool input to
-opt out of the pre-exec check for that call.
+opt out of the comment check for that call. The flag is honored by both
+the pre-exec (`tool_call`) and post-exec (`tool_result`) handlers; the
+post-exec path also skips the check when the tool result already looks
+like a failure.
 
 ## Installation
 
