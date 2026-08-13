@@ -326,9 +326,11 @@ describe("createCommentCheckerToolCallHandler", () => {
 			}),
 		});
 		const ctx = makeContext();
+
 		// when
 		const result = await handler(event, ctx);
 
+		// then
 		expect(result).toEqual({
 			block: true,
 			reason:
@@ -337,8 +339,6 @@ describe("createCommentCheckerToolCallHandler", () => {
 				"\n" +
 				"To override for this call, re-run the tool with `skipCommentCheck: true` in its input.",
 		});
-
-		// then
 	});
 
 	it("#given a clean write #when handling tool_call #then passes through", async () => {
@@ -435,19 +435,70 @@ describe("createCommentCheckerToolCallHandler", () => {
 		expect(result).toBeUndefined();
 	});
 
-	it("#given a single warning #when handling tool_call #then reason states the file, that it was not modified, and the override hint (issue 75)", async () => {
+	it("#given an apply_patch tool_result that flags multiple files #when handling tool_result #then appends a warning per file and marks the result as an error", async () => {
 		// given
-		const event: ToolCallLike = {
-			toolName: "write",
+		const event: ToolResultLike = {
+			toolName: "apply_patch",
+			input: {},
+			details: {
+				files: [
+					{
+						filePath: "src/a.ts",
+						before: "",
+						after: "// header a\nconst a = 1;\n",
+						type: "add",
+					},
+					{
+						filePath: "src/b.ts",
+						before: "const b = 1;\n",
+						after: "// header b\nconst b = 2;\n",
+						type: "update",
+					},
+				],
+			},
+			content: [{ type: "text", text: "applied patch to 2 files" }],
+			isError: false,
+		};
+		const handler = createCommentCheckerToolResultHandler({
+			run: async (input) => {
+				if (input.tool_name === "Write") {
+					return { status: "warning", message: "AI comment in src/a.ts", binaryPath: "/bin/cc", exitCode: 2 };
+				}
+				return { status: "warning", message: "AI comment in src/b.ts", binaryPath: "/bin/cc", exitCode: 2 };
+			},
+		});
+		const ctx = makeContext();
+
+		// when
+		const result = await handler(event, ctx);
+
+		// then
+		expect(result?.isError).toBe(true);
+		expect(result?.content).toEqual([
+			{ type: "text", text: "applied patch to 2 files" },
+			{ type: "text", text: "\n\nAI comment in src/a.ts" },
+			{ type: "text", text: "\n\nAI comment in src/b.ts" },
+		]);
+	});
+
+	it("#given a multiedit tool_result with bad comments #when handling tool_result #then appends the checker warning", async () => {
+		// given
+		const event: ToolResultLike = {
+			toolName: "multiedit",
 			input: {
 				filePath: "src/example.ts",
-				content: "// comment\nconst value = 1;\n",
+				edits: [
+					{ oldString: "const a = 1;\n", newString: "// explain a\nconst a = 1;\n" },
+					{ oldString: "const b = 1;\n", newString: "// explain b\nconst b = 1;\n" },
+				],
 			},
+			content: [{ type: "text", text: "edited src/example.ts" }],
+			isError: false,
 		};
-		const handler = createCommentCheckerToolCallHandler({
+		const handler = createCommentCheckerToolResultHandler({
 			run: async () => ({
 				status: "warning",
-				message: "AI comment detected",
+				message: "COMMENT DETECTED",
 				binaryPath: "/bin/comment-checker",
 				exitCode: 2,
 			}),
@@ -457,12 +508,44 @@ describe("createCommentCheckerToolCallHandler", () => {
 		// when
 		const result = await handler(event, ctx);
 
-		// then — explicit notice the LLM can act on
-		expect(result?.block).toBe(true);
-		expect(result?.reason).toContain("blocked the write for src/example.ts");
-		expect(result?.reason).toContain("the file was NOT modified");
-		expect(result?.reason).toContain("AI comment detected");
-		expect(result?.reason).toContain("skipCommentCheck: true");
+		// then
+		expect(result?.content).toEqual([
+			{ type: "text", text: "edited src/example.ts" },
+			{ type: "text", text: "\n\nCOMMENT DETECTED" },
+		]);
+		expect(result?.isError).toBe(true);
+	});
+
+	it("#given a multi_edit tool_result with bad comments #when handling tool_result #then appends the checker warning", async () => {
+		// given
+		const event: ToolResultLike = {
+			toolName: "multi_edit",
+			input: {
+				filePath: "src/example.ts",
+				edits: [{ oldString: "const a = 1;\n", newString: "// explain a\nconst a = 1;\n" }],
+			},
+			content: [{ type: "text", text: "edited src/example.ts" }],
+			isError: false,
+		};
+		const handler = createCommentCheckerToolResultHandler({
+			run: async () => ({
+				status: "warning",
+				message: "COMMENT DETECTED",
+				binaryPath: "/bin/comment-checker",
+				exitCode: 2,
+			}),
+		});
+		const ctx = makeContext();
+
+		// when
+		const result = await handler(event, ctx);
+
+		// then
+		expect(result?.content).toEqual([
+			{ type: "text", text: "edited src/example.ts" },
+			{ type: "text", text: "\n\nCOMMENT DETECTED" },
+		]);
+		expect(result?.isError).toBe(true);
 	});
 
 	it("#given an edit source name #when handling tool_call #then reason names the tool as 'edit' (issue 75)", async () => {
