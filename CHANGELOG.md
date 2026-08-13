@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.3.0...v1.3.1) (2026-08-13)
+
+
+### Bug Fixes
+
+* **issue-75:** make pre-exec block explicit and honor skipCommentCheck in tool_result ([#76](https://github.com/nx-solutions-ug/omp-comment-checker/issues/76)) ([3276c61](https://github.com/nx-solutions-ug/omp-comment-checker/commit/3276c61c88b725f365c4765df554c3e9ec15171c))
+
 # [1.3.0](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.2.1...v1.3.0) (2026-07-28)
 
 
