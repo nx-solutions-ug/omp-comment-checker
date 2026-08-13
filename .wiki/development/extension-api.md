@@ -32,11 +32,11 @@ The extension detects omp capabilities at runtime in `createOmpBackend(pi)`. If 
 
 ### `tool_call`
 
-Only `write` and `edit` are handled. The handler may return `{ block: true, reason }` to abort the tool call before execution. It also skips the check when the input contains `skipCommentCheck: true`.
+Only `write` and `edit` are handled. The handler may return `{ block: true, reason }` to abort the tool call before execution. The `reason` explicitly names the blocked tool, the file path, states the file was NOT modified, includes the checker warning, and ends with the `skipCommentCheck: true` override hint. The check is also skipped when the input contains `skipCommentCheck: true`.
 
 ### `tool_result`
 
-Handles `write`, `edit`, `multiedit` / `multi_edit`, `apply_patch`, and omp `edit` modes via `details.perFileResults`. The handler may return mutated `content` and `isError: true`. It skips checking when the result is already marked `isError` or its text looks like a tool failure.
+Handles `write`, `edit`, `multiedit` / `multi_edit`, `apply_patch`, and omp `edit` modes via `details.perFileResults`. The handler may return mutated `content` and `isError: true`. It skips checking when the result is already marked `isError`, when its text looks like a tool failure, or when the input contains `skipCommentCheck: true`.
 
 ### `session_start`
 

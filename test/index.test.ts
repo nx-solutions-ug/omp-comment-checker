@@ -218,6 +218,35 @@ describe("createCommentCheckerToolResultHandler", () => {
 		// then
 		expect(result).toBeUndefined();
 	});
+
+	it("#given skipCommentCheck #when handling tool result #then passes through without invoking the checker", async () => {
+		// given
+		const event: ToolResultLike = {
+			toolName: "write",
+			input: {
+				filePath: "src/example.ts",
+				content: "// comment\nconst value = 1;\n",
+				skipCommentCheck: true,
+			},
+			content: [{ type: "text", text: "wrote src/example.ts" }],
+			isError: false,
+		};
+		let invocations = 0;
+		const handler = createCommentCheckerToolResultHandler({
+			run: async () => {
+				invocations++;
+				return { status: "warning", message: "x", binaryPath: "/bin/cc", exitCode: 2 };
+			},
+		});
+		const ctx = makeContext();
+
+		// when
+		const result = await handler(event, ctx);
+
+		// then
+		expect(result).toBeUndefined();
+		expect(invocations).toBe(0);
+	});
 });
 
 describe("createCommentCheckerToolCallHandler", () => {
@@ -267,7 +296,11 @@ describe("createCommentCheckerToolCallHandler", () => {
 		]);
 		expect(result).toEqual({
 			block: true,
-			reason: "COMMENT DETECTED",
+			reason:
+				"omp-comment-checker blocked the write for src/example.ts; the file was NOT modified.\n" +
+				"Reason: COMMENT DETECTED\n" +
+				"\n" +
+				"To override for this call, re-run the tool with `skipCommentCheck: true` in its input.",
 		});
 		expect(onWarnings).toEqual([
 			{ filePath: "src/example.ts", message: "COMMENT DETECTED", sourceToolName: "write" },
@@ -293,12 +326,19 @@ describe("createCommentCheckerToolCallHandler", () => {
 			}),
 		});
 		const ctx = makeContext();
-
 		// when
 		const result = await handler(event, ctx);
 
+		expect(result).toEqual({
+			block: true,
+			reason:
+				"omp-comment-checker blocked the edit for src/example.ts; the file was NOT modified.\n" +
+				"Reason: AI comment detected\n" +
+				"\n" +
+				"To override for this call, re-run the tool with `skipCommentCheck: true` in its input.",
+		});
+
 		// then
-		expect(result).toEqual({ block: true, reason: "AI comment detected" });
 	});
 
 	it("#given a clean write #when handling tool_call #then passes through", async () => {
@@ -393,5 +433,62 @@ describe("createCommentCheckerToolCallHandler", () => {
 
 		// then
 		expect(result).toBeUndefined();
+	});
+
+	it("#given a single warning #when handling tool_call #then reason states the file, that it was not modified, and the override hint (issue 75)", async () => {
+		// given
+		const event: ToolCallLike = {
+			toolName: "write",
+			input: {
+				filePath: "src/example.ts",
+				content: "// comment\nconst value = 1;\n",
+			},
+		};
+		const handler = createCommentCheckerToolCallHandler({
+			run: async () => ({
+				status: "warning",
+				message: "AI comment detected",
+				binaryPath: "/bin/comment-checker",
+				exitCode: 2,
+			}),
+		});
+		const ctx = makeContext();
+
+		// when
+		const result = await handler(event, ctx);
+
+		// then — explicit notice the LLM can act on
+		expect(result?.block).toBe(true);
+		expect(result?.reason).toContain("blocked the write for src/example.ts");
+		expect(result?.reason).toContain("the file was NOT modified");
+		expect(result?.reason).toContain("AI comment detected");
+		expect(result?.reason).toContain("skipCommentCheck: true");
+	});
+
+	it("#given an edit source name #when handling tool_call #then reason names the tool as 'edit' (issue 75)", async () => {
+		// given
+		const event: ToolCallLike = {
+			toolName: "edit",
+			input: {
+				filePath: "src/example.ts",
+				oldString: "const value = 1;\n",
+				newString: "// explain value\nconst value = 2;\n",
+			},
+		};
+		const handler = createCommentCheckerToolCallHandler({
+			run: async () => ({
+				status: "warning",
+				message: "AI comment detected",
+				binaryPath: "/bin/comment-checker",
+				exitCode: 2,
+			}),
+		});
+		const ctx = makeContext();
+
+		// when
+		const result = await handler(event, ctx);
+
+		// then
+		expect(result?.reason).toContain("blocked the edit for src/example.ts");
 	});
 });

@@ -153,12 +153,31 @@ async function runChecks(
 }
 
 function formatBlockReason(warnings: Warning[]): string {
-	const first = warnings[0];
-	if (warnings.length === 1 && first !== undefined) return first.message;
-	return [
-		`omp-comment-checker blocked ${warnings.length} file(s):`,
-		...warnings.map((w) => `• ${w.filePath}: ${w.message}`),
-	].join("\n");
+	const lines: string[] = [];
+	if (warnings.length === 1 && warnings[0] !== undefined) {
+		const w = warnings[0];
+		lines.push(
+			`omp-comment-checker blocked the ${sourceToolNameLabel(w.sourceToolName)} for ${w.filePath}; the file was NOT modified.`,
+		);
+		lines.push(`Reason: ${w.message}`);
+	} else {
+		lines.push(`omp-comment-checker blocked ${warnings.length} file(s); none were modified:`);
+		for (const w of warnings) {
+			lines.push(`• ${w.filePath} (${sourceToolNameLabel(w.sourceToolName)}): ${w.message}`);
+		}
+	}
+	lines.push("");
+	lines.push("To override for this call, re-run the tool with `skipCommentCheck: true` in its input.");
+	return lines.join("\n");
+}
+
+function sourceToolNameLabel(sourceToolName: string): string {
+	const lower = sourceToolName.toLowerCase();
+	if (lower === "write") return "write";
+	if (lower === "edit") return "edit";
+	if (lower === "multiedit" || lower === "multi_edit") return "multiedit";
+	if (lower === "apply_patch") return "apply_patch";
+	return sourceToolName;
 }
 
 export function createCommentCheckerToolCallHandler(deps: CommentCheckerHandlerDeps) {
@@ -193,6 +212,8 @@ export function createCommentCheckerToolCallHandler(deps: CommentCheckerHandlerD
 
 export function createCommentCheckerToolResultHandler(deps: CommentCheckerHandlerDeps) {
 	return async (event: ToolResultLike, ctx: ExtensionContextLike): Promise<ToolResultHandlerResult | undefined> => {
+		const skipFlag = (event.input as Record<string, unknown>)["skipCommentCheck"];
+		if (skipFlag === true) return undefined;
 		const requests = extractCommentCheckRequests(event);
 		if (requests.length === 0) return undefined;
 
