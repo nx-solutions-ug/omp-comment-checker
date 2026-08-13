@@ -29,7 +29,7 @@ Runs on every push to `main`. The `.releaserc.json` configuration also declares 
 4. Invokes `npx semantic-release` to bump `package.json`/`package-lock.json`, write `CHANGELOG.md`, publish to npm, and create a GitHub release.
 5. Rebuilds the release body from the full commit range between the previous tag and the new tag. If the tag did not change, the step exits early; if the body exceeds 120,000 bytes, it is truncated at the last complete line and links to `CHANGELOG.md`.
 
-The package is configured for npm provenance in `package.json`.
+The workflow declares the top-level permissions `contents: write` and `id-token: write`; the `id-token: write` permission is required for npm provenance attestation. The package is configured for npm provenance in `package.json`.
 
 ## Vouch gate (`vouch-pr.yml`)
 
