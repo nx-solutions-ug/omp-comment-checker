@@ -41,6 +41,16 @@ Reason: <checker warning>
 To override for this call, re-run the tool with `skipCommentCheck: true` in its input.
 ```
 
+When a single call would produce warnings for multiple files, the reason lists each file with its tool name and warning:
+
+```text
+omp-comment-checker blocked 2 file(s); none were modified:
+• src/a.ts (write): <checker warning>
+• src/b.ts (edit): <checker warning>
+
+To override for this call, re-run the tool with `skipCommentCheck: true` in its input.
+```
+
 ```ts
 return {
   block: true,
@@ -57,16 +67,16 @@ return {
 For all intercepted tools:
 
 1. The extension extracts the affected files and final text from the tool result.
-2. If the result already looks like a failure (e.g. text starting with "error" or containing "error:", "failed to", or "could not"), the check is skipped.
+2. If the result is already marked `isError` or its text looks like a tool failure (e.g. text starting with "error" or containing "error:", "failed to", or "could not"), the check is skipped.
 3. The checker runs against that text.
 4. Empty warning messages are ignored.
-5. On exit code `2`, the warning message is appended to the result content and `isError` is set to `true`.
+5. On exit code `2`, each warning message is appended to the result content and `isError` is set to `true`.
 
 ```ts
 return {
   content: [
     ...event.content,
-    { type: "text", text: "\n\n<checker warning>" },
+    ...outcome.warnings.map((w) => ({ type: "text" as const, text: `\n\n${w.message}` })),
   ],
   isError: true,
 };
@@ -76,7 +86,7 @@ This makes the tool result look like a failure, forcing the LLM to react even th
 
 ## Opt-out
 
-Pass `skipCommentCheck: true` in the tool input to bypass the comment check for that call. Both the pre-exec (`tool_call`) and post-exec (`tool_result`) checks honor this flag. Post-exec checks are also skipped when the result is already a failure.
+Pass `skipCommentCheck: true` in the tool input to bypass the comment check for that call. Both the pre-exec (`tool_call`) and post-exec (`tool_result`) checks honor this flag. Post-exec checks are also skipped when the result is already marked `isError` or its text looks like a tool failure.
 
 ## `session_compact` re-injection
 
@@ -87,7 +97,7 @@ When post-exec produces a warning, the `onWarning` callback persists it to the s
 | Exit code | Meaning | Effect |
 |-----------|---------|--------|
 | `0` | pass | no change to tool result |
-| `2` | warning | block pre-exec, or mark post-exec result as error |
+| `2` | warning | block pre-exec, or mark post-exec result as an error |
 | other / missing | error / missing | leave output unchanged, no self-heal entry |
 
-If the binary is missing or exits unexpectedly, the extension leaves the tool output untouched. This avoids false-positive tool failures. Process output is bounded at 64 KiB and killed after 30 seconds; timeout output is surfaced as the failure reason so the host can react.
+If the binary is missing or exits unexpectedly, the extension leaves the tool output untouched. This avoids false-positive tool failures. Process output is bounded at 64 KiB and killed after 30 seconds; timeout output is surfaced as the failure reason so the host can react. When a post-exec check does produce a warning, the checker warning is appended as plain text to the existing tool result content and `isError` is set to `true`; the same happens for each additional warning in multi-file calls.

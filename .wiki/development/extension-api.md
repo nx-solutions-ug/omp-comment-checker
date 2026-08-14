@@ -34,6 +34,8 @@ The extension detects omp capabilities at runtime in `createOmpBackend(pi)`. If 
 
 Only `write` and `edit` are handled. The handler may return `{ block: true, reason }` to abort the tool call before execution. The `reason` explicitly names the blocked tool, the file path, states the file was NOT modified, includes the checker warning, and ends with the `skipCommentCheck: true` override hint. The check is also skipped when the input contains `skipCommentCheck: true`.
 
+If multiple files would be blocked in a single call, the reason lists each affected file with its tool name and warning.
+
 ### `tool_result`
 
 Handles `write`, `edit`, `multiedit` / `multi_edit`, `apply_patch`, and omp `edit` modes via `details.perFileResults`. The handler may return mutated `content` and `isError: true`. It skips checking when the result is already marked `isError`, when its text looks like a tool failure, or when the input contains `skipCommentCheck: true`.
@@ -45,6 +47,8 @@ Clears the in-memory `SelfHealStore`.
 ### `session_compact`
 
 Under omp, re-injects unfired warnings through `backend.sendMessage` with `triggerTurn: false`. The handler is registered directly via `api.on("session_compact", ...)`; on plain pi the event simply never fires because the host does not emit it, and the `sendMessage`/`appendEntry` calls are no-ops.
+
+`createOmpBackend(pi)` considers the host omp-capable when it exposes any of `appendEntry`, `sendMessage`, or `on`. If none are present, `available` is `false` and the backend methods are no-ops. The `session_compact` handler is still registered through the host `api.on` whenever it exists; the no-op fallback only matters for `appendEntry` and `sendMessage`.
 
 ## Type definitions
 
