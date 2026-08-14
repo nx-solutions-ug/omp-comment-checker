@@ -39,6 +39,8 @@ If the tool result contains `details.perFileResults` (or `details.files`), the o
 
 For `perFileResults`, `oldText` is looked up under `oldText`, `old_text`, `oldString`, or `old_string`. `newText` uses the `new*` variants. If `oldText` is empty, the request is treated as a `Write`. Entries with `success: false` are skipped.
 
+Note: on a `tool_call` event the top-level `edit` input is used; `perFileResults` only appears in the corresponding `tool_result`, so the post-exec handler is the one that actually processes omp edit-tool details.
+
 ## `multiedit` / `multi_edit`
 
 Reads `filePath`/`file_path`/`path` and the `edits` array. Each edit must contain `oldString`/`old_string` and `newString`/`new_string`.
@@ -69,6 +71,8 @@ Each metadata item must have `filePath`/`file_path`/`path`, `before`/`old`/`oldS
 - `type === "delete"` is skipped.
 - If `before` is empty, the request becomes a `Write` with `content = after`.
 - Otherwise it becomes an `Edit` with `old_string = before` and `new_string = after`.
+
+OMO metadata is searched in this order: `details.files`, then `details.result.files`, then `details.metadata.files`.
 
 ### Raw Codex patch
 

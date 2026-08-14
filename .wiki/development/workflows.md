@@ -95,3 +95,9 @@ For freeform prompts posted on PR comments, the workflow appends `.omp/commands/
 ### `omp-fix-issue.yml`
 
 Triggered by `repository_dispatch` with `event_type: issue-triaged`. It clones the repo, configures the agent, runs `fix-issue.md`, and creates a PR from the resulting branch via `create-pull-request`.
+
+## Branch protection
+
+`.github/branch-ruleset.json` enforces the main-branch rules: linear history, no force pushes, required PR review (one approval including code-owner review), required review thread resolution, and required status checks.
+
+Note: the required status checks in the ruleset currently name Node 20/22 matrix jobs (`test (ubuntu-latest · node 20)`, etc.), while `ci.yml` runs Node 24/25. Until the ruleset or CI matrix is aligned, the configured required checks will not match the actual job names produced by CI.
