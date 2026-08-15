@@ -69,6 +69,7 @@ Reads `filePath`/`file_path`/`path` and the `edits` array. Each edit must contai
 Each metadata item must have `filePath`/`file_path`/`path`, `before`/`old`/`oldString`/`old_string`, and `after`/`new`/`newString`/`new_string`. Optional fields include `movePath`/`move_path` and `type`/`operation`.
 
 - `type === "delete"` is skipped.
+- If `movePath`/`move_path` is present, it is used as the final file path for the resulting `Write` or `Edit`.
 - If `before` is empty, the request becomes a `Write` with `content = after`.
 - Otherwise it becomes an `Edit` with `old_string = before` and `new_string = after`.
 
