@@ -13,7 +13,7 @@ This only works under oh-my-pi. On plain pi the self-heal path is a no-op becaus
 
 ## Lifecycle
 
-1. **Warning detected** — `tool_result` handler finds a warning for `write`, `edit`, `multiedit`, `apply_patch`, or the omp `edit` tool.
+1. **Warning detected** — pre-exec (`tool_call`) or post-exec (`tool_result`) finds a warning for `write`, `edit`, `multiedit`, `apply_patch`, or the omp `edit` tool.
 2. **Record warning** — `SelfHealStore.record()` creates a `WarningRecord` with a random UUID and timestamp.
 3. **Persist to session** — `backend.appendEntry("omp-comment-checker:warning", record)` stores the warning as a custom session entry.
 4. **Session compaction** — when the host fires `session_compact`, the extension reads all unfired warnings from the store.

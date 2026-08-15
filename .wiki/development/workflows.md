@@ -66,6 +66,7 @@ Runs on issue and pull request open/reopen events.
 - Tags newly opened/reopened issues with `needs-triage`.
 - Auto-assigns new issues and PRs to `niklasschaeffer`.
 - Uses the chronova-agent app token for label and assignee edits.
+- Note: `auto-manage.yml` and `omp-ci.yml` both run `triage-issue` paths on `issues: opened`; the omp path also labels, classifies, and posts a triage summary comment before dispatching `omp-fix-issue.yml`.
 
 ## `/omp` PR comment handling (`omp.yml`)
 
@@ -81,7 +82,7 @@ The repository also ships agent automation for the oh-my-pi runtime. All are dri
 
 ### `omp-ci.yml`
 
-- **triage-issue** runs on `issues: opened` or manual dispatch. It reacts to the issue with an `eyes` reaction, runs `triage-issue.md`, and then dispatches `issue-triaged` to `omp-fix-issue.yml`.
+- **triage-issue** runs on `issues: opened` or manual dispatch. It reacts to the issue with an `eyes` reaction, runs `triage-issue.md` (which may add type/priority labels and a triage summary comment), and then dispatches `issue-triaged` to `omp-fix-issue.yml`.
 - **label-pr** runs when a PR is opened, synchronized, or marked ready for review. It checks whether the PR already has a type label (`bug`, `feature`, `enhancement`, `docs`, `chore`) and a priority label; if so, the job skips.
 - **review-pr** runs on PR open/synchronize/ready_for_review or manual dispatch. It uses `gh extension install agynio/gh-pr-review --force` to enable review submissions. On `synchronize`, a `re-review-check` job skips the review if the new commit was authored by an agent (`opencode-agent`, `opencode`, `github-actions`, `omp-agent`, or `chronova-agent`). It also prefixes the prompt with `dep:` for Dependabot/Renovate PRs and `bot:` for bot/agent-authored PRs. The job reacts to the PR with an `eyes` reaction before running the agent.
 - **cancel-review-on-close / cancel-label-on-close** run when a PR is `closed`. Each acquires the concurrency group of the matching live job (`omp-review-<n>` or `omp-label-<n>`) with `cancel-in-progress: true`, forcing any in-progress agent run for that PR to cancel.

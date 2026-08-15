@@ -31,6 +31,7 @@ For `write` and `edit` only:
 4. The checker runs against the proposed content.
 5. Empty warning messages are ignored.
 6. On exit code `2` (warning), the call is blocked and a `reason` is returned.
+7. Each warning is passed to the `onWarning` callback, so it is also recorded in the self-heal store (see [Self-heal loop](self-heal.md)).
 
 The host aborts the tool call before the file is written. The rejection reason is fed back to the LLM so it can self-correct on the next turn. The reason explicitly names the blocked tool, the file path, states that the file was NOT modified, and shows the checker warning plus the override hint:
 
@@ -90,7 +91,7 @@ Pass `skipCommentCheck: true` in the tool input to bypass the comment check for 
 
 ## `session_compact` re-injection
 
-When post-exec produces a warning, the `onWarning` callback persists it to the session. On the next `session_compact` event, all unfired warnings are summarized and sent to the LLM via `backend.sendMessage(..., { triggerTurn: false })`, then marked as fired. See [Self-heal loop](self-heal.md) for full details.
+When a warning is detected (pre-exec or post-exec), the `onWarning` callback persists it to the session. On the next `session_compact` event, all unfired warnings are summarized and sent to the LLM via `backend.sendMessage(..., { triggerTurn: false })`, then marked as fired. See [Self-heal loop](self-heal.md) for full details.
 
 ## Checker exit-code handling
 
