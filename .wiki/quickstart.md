@@ -97,6 +97,7 @@ The command is registered via `pi.registerCommand("omp-comment-checker", ...)` i
 
 1. Load the extension with one of the methods above.
 2. Ask the agent to write a file that contains a suspicious comment such as `// todo: fix this later`.
-3. The tool call should be blocked before the file is written, or the tool result should be marked as an error with the checker warning appended.
+3. The `write` tool call should be blocked before the file is written, and the rejection reason should appear in the LLM context.
+4. If a tool that cannot be pre-checked (e.g. `apply_patch`, `multiedit`, omp `edit` modes) succeeds, its tool result is marked `isError: true` with the checker warning appended, and the warning is persisted for the next `session_compact` re-injection.
 
-The exact behavior depends on the tool. See [Tool hook behavior](./behavior/tool-hooks.md) for the matrix.
+The exact behavior depends on the tool. See [Tool hook behavior](./behavior/tool-hooks.md) for the matrix and [Self-heal loop](./behavior/self-heal.md) for how warnings survive across turns.

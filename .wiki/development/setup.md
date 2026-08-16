@@ -52,6 +52,9 @@ src/
   omp.ts        — oh-my-pi backend capability detection and warning record types
   self-heal.ts  — in-memory warning store
 
+public/
+  banner.png    — README banner asset
+
 test/
   *.test.ts     — vitest coverage for the corresponding src modules
 ```

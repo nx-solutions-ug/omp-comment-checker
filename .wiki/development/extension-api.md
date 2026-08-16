@@ -34,7 +34,7 @@ The extension detects omp capabilities at runtime in `createOmpBackend(pi)`. If 
 
 Only `write` and `edit` are handled. The handler may return `{ block: true, reason }` to abort the tool call before execution. The `reason` explicitly names the blocked tool, the file path, states the file was NOT modified, includes the checker warning, and ends with the `skipCommentCheck: true` override hint. The check is also skipped when the input contains `skipCommentCheck: true`.
 
-If multiple files would be blocked in a single call, the reason lists each affected file with its tool name and warning.
+If multiple files would be blocked in a single call, the reason lists each affected file with its tool name and warning. Pre-exec warnings are also forwarded to `onWarning`, so they are persisted in the self-heal store even though the file was never written.
 
 ### `tool_result`
 
