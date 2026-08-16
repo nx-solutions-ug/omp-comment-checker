@@ -67,7 +67,7 @@ Runs on issue and pull request open/reopen events.
 - Auto-assigns new issues and PRs to `niklasschaeffer`.
 - Uses the chronova-agent app token for label and assignee edits.
 - Note: `auto-manage.yml` and `omp-ci.yml` both run `triage-issue` paths on `issues: opened`; the omp path also labels, classifies, and posts a triage summary comment before dispatching `omp-fix-issue.yml`.
-
+- Note: `auto-manage.yml` only handles the GitHub-side pass (adds the `needs-triage` label and assigns `niklasschaeffer`) on `issues: opened`. `omp-ci.yml` separately runs the omp `triage-issue` path, which may add type/priority labels and post a triage summary comment before dispatching `omp-fix-issue.yml`.
 ## `/omp` PR comment handling (`omp.yml`)
 
 `omp.yml` listens for issue and PR review comments starting with `/omp` (or `/oc`). It expands either a named command file from `.omp/commands/<command>.md` or treats the remainder as a freeform prompt. It does not run any extension code itself; it is part of the repository's agent automation and ships under `.omp/`, not under `src/`. See `AGENTS.md` for the conventions governing these command prompts.
