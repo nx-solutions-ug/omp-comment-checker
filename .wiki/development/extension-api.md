@@ -26,7 +26,7 @@ The extension consumes these host APIs:
 | `ctx.ui` | Required; slash-command handlers read optional `ctx.ui.notify` to surface status. |
 | `pi.appendEntry` / `pi.sendMessage` | Optional omp-only APIs used by the self-heal path. |
 
-The extension detects omp capabilities at runtime in `createOmpBackend(pi)`. If `appendEntry` and `sendMessage` are absent, the self-heal path is a no-op. On plain pi the `session_compact` event also does not fire, so unfired warnings stay in the in-memory store only.
+The extension detects omp capabilities at runtime in `createOmpBackend(pi)`. If none of `appendEntry`, `sendMessage`, or `on` are present, the backend is unavailable and every backend method is a no-op. On plain pi the `session_compact` event also does not fire, so unfired warnings stay in the in-memory store only.
 
 ## Event handlers
 

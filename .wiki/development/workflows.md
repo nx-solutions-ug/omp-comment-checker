@@ -68,9 +68,6 @@ Runs on issue and pull request open/reopen events.
 - Uses the chronova-agent app token for label and assignee edits.
 - Note: `auto-manage.yml` and `omp-ci.yml` both run `triage-issue` paths on `issues: opened`; the omp path also labels, classifies, and posts a triage summary comment before dispatching `omp-fix-issue.yml`.
 - Note: `auto-manage.yml` only handles the GitHub-side pass (adds the `needs-triage` label and assigns `niklasschaeffer`) on `issues: opened`. `omp-ci.yml` separately runs the omp `triage-issue` path, which may add type/priority labels and post a triage summary comment before dispatching `omp-fix-issue.yml`.
-## `/omp` PR comment handling (`omp.yml`)
-
-`omp.yml` listens for issue and PR review comments starting with `/omp` (or `/oc`). It expands either a named command file from `.omp/commands/<command>.md` or treats the remainder as a freeform prompt. It does not run any extension code itself; it is part of the repository's agent automation and ships under `.omp/`, not under `src/`. See `AGENTS.md` for the conventions governing these command prompts.
 
 ## oh-my-pi agent workflows
 
@@ -89,7 +86,7 @@ The repository also ships agent automation for the oh-my-pi runtime. All are dri
 
 ### `/omp` PR comment handling (`omp.yml`)
 
-`omp.yml` listens for issue and PR review comments starting with `/omp` (or `/oc`). It expands either a named command file from `.omp/commands/<command>.md` or treats the remainder as a freeform prompt. The job reacts to the trigger comment with an `eyes` reaction and installs the `gh-pr-review` extension before running the agent.
+`omp.yml` listens for issue and PR review comments starting with `/omp` (or `/oc`). It expands either a named command file from `.omp/commands/<command>.md` or treats the remainder as a freeform prompt. It does not run any extension code itself; it is part of the repository's agent automation and ships under `.omp/`, not under `src/`. The job reacts to the trigger comment with an `eyes` reaction and installs the `gh-pr-review` extension before running the agent. See `AGENTS.md` for the conventions governing these command prompts.
 
 For freeform prompts posted on PR comments, the workflow appends `.omp/commands/_pr-commit-push.md`. This instructs the agent to check out the PR branch, apply the requested changes, run relevant quality gates, and **commit and push the result back to the PR branch** before finishing. It prevents the agent from leaving changes staged only in the runner (added in PR #57, closing nx-solutions-ug/chronova#637).
 
