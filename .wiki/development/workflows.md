@@ -2,12 +2,14 @@
 type: development
 title: GitHub Actions workflows
 description: CI, release, vouch, wiki-update, and auto-manage automation, including the chronova-agent GitHub App token used for elevated operations.
-tags: [development, workflows, ci, release, vouch, github-actions]
+tags: [development, workflows, ci, release, vouch, wiki, github-actions]
 ---
 
 # GitHub Actions workflows
 
 All repository automation lives under `.github/workflows`. Most write operations use a chronova-agent GitHub App token (`secrets.APP_CLIENT_ID` / `secrets.APP_PRIVATE_KEY`) generated via `actions/create-github-app-token@v3`, rather than the default `GITHUB_TOKEN`.
+
+The `update-wiki.yml` workflow can also publish with a dedicated `WIKI_PUSH_TOKEN` secret, falling back to the app token or `GITHUB_TOKEN`.
 
 ## CI (`ci.yml`)
 
@@ -74,28 +76,24 @@ Runs on issue and pull request open/reopen events.
 The repository also ships agent automation for the oh-my-pi runtime. All are driven by `.omp/commands/*.md` prompt files and are not part of the extension package itself. They install OMP from `https://omp.sh/install`, configure an Ollama Cloud API key from `secrets.OLLAMA_API_KEY`, and run `omp -p --model ollama-cloud/minimax-m3 --mode json` with the expanded prompt.
 
 - `omp-ci.yml` — triages issues and labels/reviews PRs using the oh-my-pi coding agent.
-- `omp-fix-issue.yml` — attempts to fix an issue via the oh-my-pi agent and opens a PR.
-- `omp.yml` — general oh-my-pi integration workflow triggered by `/omp` (or `/oc`) comments on issues and PR review comments.
+- `omp-fix-issue.yml` — triggered by `repository_dispatch` with `event_type: issue-triaged`. It clones the repo, configures the agent, runs `fix-issue.md`, and creates a PR from the resulting branch via `create-pull-request`.
+- `omp.yml` — general oh-my-pi integration workflow triggered by `/omp` (or `/oc`) comments on issue and PR review comments.
 
 ### `omp-ci.yml`
 
 - **triage-issue** runs on `issues: opened` or manual dispatch. It reacts to the issue with an `eyes` reaction, runs `triage-issue.md` (which may add type/priority labels and a triage summary comment), and then dispatches `issue-triaged` to `omp-fix-issue.yml`.
 - **label-pr** runs when a PR is opened, synchronized, or marked ready for review. It checks whether the PR already has a type label (`bug`, `feature`, `enhancement`, `docs`, `chore`) and a priority label; if so, the job skips.
-- **review-pr** runs on PR open/synchronize/ready_for_review or manual dispatch. It uses `gh extension install agynio/gh-pr-review --force` to enable review submissions. On `synchronize`, a `re-review-check` job skips the review if the new commit was authored by an agent (`opencode-agent`, `opencode`, `github-actions`, `omp-agent`, or `chronova-agent`). It also prefixes the prompt with `dep:` for Dependabot/Renovate PRs and `bot:` for bot/agent-authored PRs. The job reacts to the PR with an `eyes` reaction before running the agent.
+- **review-pr** runs on PR open/synchronize/ready_for_review or manual dispatch. It uses `gh extension install agynio/gh-pr-review --force` to enable review submissions. On `synchronize`, a `re-review-check` job skips the review if the new commit was authored by an agent (`opencode-agent`, `opencode`, `github-actions`, `omp-agent`, or `chronova-agent`). It also prefixes the prompt with `dep:` for Dependabot/Renovate PRs and `bot:` for bot/agent-authored PRs. The job reacts to the PR with an `eyes` reaction before running the agent. The `review-pr.md` prompt deduplicates findings, resolves prior bot review threads once all findings are addressed, and approves the PR in that case.
 - **cancel-review-on-close / cancel-label-on-close** run when a PR is `closed`. Each acquires the concurrency group of the matching live job (`omp-review-<n>` or `omp-label-<n>`) with `cancel-in-progress: true`, forcing any in-progress agent run for that PR to cancel.
 
-### `/omp` PR comment handling (`omp.yml`)
+### `/omp` comment handling (`omp.yml`)
 
-`omp.yml` listens for issue and PR review comments starting with `/omp` (or `/oc`). It expands either a named command file from `.omp/commands/<command>.md` or treats the remainder as a freeform prompt. It does not run any extension code itself; it is part of the repository's agent automation and ships under `.omp/`, not under `src/`. The job reacts to the trigger comment with an `eyes` reaction and installs the `gh-pr-review` extension before running the agent. See `AGENTS.md` for the conventions governing these command prompts.
+`omp.yml` listens for issue comments and PR review comments starting with `/omp` (or `/oc`). It expands either a named command file from `.omp/commands/<command>.md` or treats the remainder as a freeform prompt. It does not run any extension code itself; it is part of the repository's agent automation and ships under `.omp/`, not under `src/`. The job reacts to the trigger comment with an `eyes` reaction, authenticates `gh`, configures git for push, installs OMP, and installs the `gh-pr-review` extension before running the agent. See `AGENTS.md` for the conventions governing these command prompts.
 
-For freeform prompts posted on PR comments, the workflow appends `.omp/commands/_pr-commit-push.md`. This instructs the agent to check out the PR branch, apply the requested changes, run relevant quality gates, and **commit and push the result back to the PR branch** before finishing. It prevents the agent from leaving changes staged only in the runner (added in PR #57, closing nx-solutions-ug/chronova#637).
-
-### `omp-fix-issue.yml`
-
-Triggered by `repository_dispatch` with `event_type: issue-triaged`. It clones the repo, configures the agent, runs `fix-issue.md`, and creates a PR from the resulting branch via `create-pull-request`.
+For freeform prompts posted on PR comments, the workflow appends `.omp/commands/_pr-commit-push.md` with the PR number substituted. This instructs the agent to check out the PR branch, apply the requested changes, run relevant quality gates, and **commit and push the result back to the PR branch** before finishing. It prevents the agent from leaving changes staged only in the runner (added in PR #57, closing nx-solutions-ug/chronova#637).
 
 ## Branch protection
 
 `.github/branch-ruleset.json` enforces the main-branch rules: linear history, no force pushes, required PR review (one approval including code-owner review), required review thread resolution, and required status checks.
 
-Note: the required status checks in the ruleset currently name Node 20/22 matrix jobs (`test (ubuntu-latest · node 20)`, etc.), while `ci.yml` runs Node 24/25. Until the ruleset or CI matrix is aligned, the configured required checks will not match the actual job names produced by CI.
+The branch ruleset applies to the default branch (`main`). It requires linear history, no force pushes, at least one approving review including a code-owner review, resolved review threads, and four status checks that still reference Node 20/22 (`test (ubuntu-latest · node 20)`, etc.). CI currently runs Node 24/25, so the required checks will not match the job names until the ruleset or CI matrix is updated.

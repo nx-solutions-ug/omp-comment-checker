@@ -32,7 +32,7 @@ This only works under oh-my-pi. On plain pi the self-heal path is a no-op becaus
 
 ## Host capability detection
 
-`createOmpBackend(pi)` checks whether `pi` has `appendEntry`, `sendMessage`, or `on`. If none are present, `available` is `false` and every backend method is a no-op. The `session_compact` handler is registered with `api.on("session_compact", ...)`, but on plain pi the event never fires, so unfired warnings stay in memory. This makes the self-heal path safe on plain pi.
+`createOmpBackend(pi)` checks whether `pi` has `appendEntry`, `sendMessage`, or `on`. If none are present, `available` is `false` and every backend method is a no-op. On plain pi the event never fires and the backend calls are no-ops, so the self-heal path is safe there.
 
 ## Re-injected message format
 

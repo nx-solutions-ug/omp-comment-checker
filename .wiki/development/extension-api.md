@@ -26,7 +26,7 @@ The extension consumes these host APIs:
 | `ctx.ui` | Required; slash-command handlers read optional `ctx.ui.notify` to surface status. |
 | `pi.appendEntry` / `pi.sendMessage` | Optional omp-only APIs used by the self-heal path. |
 
-The extension detects omp capabilities at runtime in `createOmpBackend(pi)`. If none of `appendEntry`, `sendMessage`, or `on` are present, the backend is unavailable and every backend method is a no-op. On plain pi the `session_compact` event also does not fire, so unfired warnings stay in the in-memory store only.
+The extension detects omp capabilities at runtime in `createOmpBackend(pi)`. If none of `appendEntry`, `sendMessage`, or `on` are present, the backend is unavailable and every backend method is a no-op. On plain pi the backend calls are no-ops and the `session_compact` event does not fire, so unfired warnings stay in the in-memory store only. The `session_compact` handler is registered through the host `api.on` whenever it exists.
 
 ## Event handlers
 
@@ -46,9 +46,7 @@ Clears the in-memory `SelfHealStore`.
 
 ### `session_compact`
 
-Under omp, re-injects unfired warnings through `backend.sendMessage` with `triggerTurn: false`. The handler is registered directly via `api.on("session_compact", ...)`; on plain pi the event simply never fires because the host does not emit it, and the `sendMessage`/`appendEntry` calls are no-ops.
-
-`createOmpBackend(pi)` considers the host omp-capable when it exposes any of `appendEntry`, `sendMessage`, or `on`. If none are present, `available` is `false` and the backend methods are no-ops. The `session_compact` handler is still registered through the host `api.on` whenever it exists; the no-op fallback only matters for `appendEntry` and `sendMessage`.
+Under omp, re-injects unfired warnings through `backend.sendMessage` with `triggerTurn: false`. On plain pi the event never fires and the `sendMessage`/`appendEntry` calls are no-ops.
 
 ## Type definitions
 
