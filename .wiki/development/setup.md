@@ -7,7 +7,7 @@ tags: [development, build, test, lint, contribute]
 
 # Development setup
 
-This is a strict TypeScript / ESM Node package. It uses vitest for tests, Biome v2.5.9 for linting, and semantic-release for publishing.
+This is a strict TypeScript / ESM Node package. It uses vitest for tests, Biome v2.5.10 for linting, and semantic-release for publishing.
 
 ## Install
 
