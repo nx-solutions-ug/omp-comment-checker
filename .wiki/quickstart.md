@@ -63,7 +63,7 @@ pi -e /path/to/omp-comment-checker/src/index.ts
 
 ## Verify the checker binary
 
-The extension depends on the native binary shipped by `@code-yeongyu/comment-checker`. If the binary is missing, the hook is a no-op and the slash command surfaces setup guidance through the host's notification UI.
+The extension depends on the native binary shipped by `@code-yeongyu/comment-checker`. If the binary is missing, the hook is a no-op and the slash command surfaces setup guidance through the host's notification UI (`ctx.ui.notify`).
 
 Run the built-in status command inside an interactive session:
 

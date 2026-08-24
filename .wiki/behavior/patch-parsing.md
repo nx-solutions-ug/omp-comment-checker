@@ -37,7 +37,7 @@ If the tool result contains `details.perFileResults` (or `details.files`), the o
 }
 ```
 
-For `perFileResults`, `oldText` is looked up under `oldText`, `old_text`, `oldString`, or `old_string`. `newText` uses the `new*` variants. If `oldText` is empty, the request is treated as a `Write`. Entries with `success: false` are skipped.
+For `perFileResults`, `oldText` is looked up under `oldText`, `old_text`, `oldString`, or `old_string`. `newText` uses the `new*` variants. If `oldText` is empty, the request is treated as a `Write`. Entries with `success: false` are skipped; `success: true` is recorded but does not otherwise change the request.
 
 Note: on a `tool_call` event the top-level `edit` input is used; `perFileResults` only appears in the corresponding `tool_result`, so the post-exec handler is the one that actually processes omp edit-tool details.
 
