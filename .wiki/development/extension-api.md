@@ -25,6 +25,7 @@ The extension consumes these host APIs:
 | `ctx.sessionManager` | Optional; supplies the session id via `getSessionId()` or `getHeader().id`. |
 | `ctx.ui` | Required; slash-command handlers read optional `ctx.ui.notify` to surface status. |
 | `pi.appendEntry` / `pi.sendMessage` | Optional omp-only APIs used by the self-heal path. |
+| `crypto.randomUUID()` / `Date.now()` | Used by the in-memory warning store for ids and timestamps. |
 
 The extension detects omp capabilities at runtime in `createOmpBackend(pi)`. If none of `appendEntry`, `sendMessage`, or `on` are present, the backend is unavailable and every backend method is a no-op. On plain pi the backend calls are no-ops and the `session_compact` event does not fire, so unfired warnings stay in the in-memory store only. The `session_compact` handler is registered through the host `api.on` whenever it exists.
 

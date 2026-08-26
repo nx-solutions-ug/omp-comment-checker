@@ -91,7 +91,7 @@ Pass `skipCommentCheck: true` in the tool input to bypass the comment check for 
 
 ## `session_compact` re-injection
 
-When a warning is detected (pre-exec or post-exec), the `onWarning` callback persists it to the session. On the next `session_compact` event, all unfired warnings are summarized and sent to the LLM via `backend.sendMessage(..., { triggerTurn: false })`, then marked as fired. See [Self-heal loop](self-heal.md) for full details.
+When a warning is detected (pre-exec or post-exec), the `onWarning` callback persists it to the session. On the next `session_compact` event, all unfired warnings are summarized and sent to the LLM via `backend.sendMessage(..., { triggerTurn: false })`, then marked as fired. Pre-exec warnings are also forwarded to `onWarning`, so they are persisted even though the file was never written. See [Self-heal loop](self-heal.md) for full details.
 
 ## Checker exit-code handling
 

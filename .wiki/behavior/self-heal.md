@@ -28,7 +28,7 @@ This only works under oh-my-pi. On plain pi the self-heal path is a no-op becaus
 - **unfired** until `markFired(ids)` is called with its id.
 - **cleared** on `session_start` (memory only; persisted session entries may remain on disk depending on the host).
 
-`unfired()` returns warnings sorted by ascending timestamp, so re-injected messages stay in the order the warnings originally occurred.
+`unfired()` returns warnings sorted by ascending timestamp, so re-injected messages stay in the order the warnings originally occurred. The store uses `crypto.randomUUID()` for ids and `Date.now()` for timestamps.
 
 ## Host capability detection
 
