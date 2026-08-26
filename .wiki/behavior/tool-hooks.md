@@ -19,7 +19,7 @@ The extension registers two extension hooks: `tool_call` and `tool_result`. It o
 | `apply_patch` | no | yes |
 | omp `edit` (any mode: `hashline`, `patch`, `replace`, `apply_patch`) | no | yes, via `details.perFileResults` |
 
-Pre-exec checks can only block `write` and `edit` because their inputs are self-contained (`filePath`, `content` or `oldString`/`newString`). Patch and multi-edit inputs are either too large to pre-validate or require the tool result before the final text is known.
+Pre-exec checks can only block `write` and `edit` because their inputs are self-contained (`filePath`, `content` or `oldString`/`newString`). Patch and multi-edit inputs are either too large to pre-validate or require the tool result before the final text is known. `formatBlockReason` in `src/index.ts` formats a single-file reason for one warning or a multi-file reason that lists each affected file with its tool name and warning.
 
 ## Pre-exec blocking (`tool_call`)
 
@@ -42,7 +42,7 @@ Reason: <checker warning>
 To override for this call, re-run the tool with `skipCommentCheck: true` in its input.
 ```
 
-When a single call would produce warnings for multiple files, the reason lists each file with its tool name and warning:
+When a single call would produce warnings for multiple files, `formatBlockReason` lists each file with its tool name and warning:
 
 ```text
 omp-comment-checker blocked 2 file(s); none were modified:
@@ -101,4 +101,4 @@ When a warning is detected (pre-exec or post-exec), the `onWarning` callback per
 | `2` | warning | block pre-exec, or mark post-exec result as an error |
 | other / missing | error / missing | leave output unchanged, no self-heal entry |
 
-If the binary is missing or exits unexpectedly, the extension leaves the tool output untouched. This avoids false-positive tool failures. Process output is bounded at 64 KiB and killed after 30 seconds; timeout output replaces any accumulated stderr so the host sees the failure cause clearly. When a post-exec check does produce a warning, the checker warning is appended as plain text to the existing tool result content and `isError` is set to `true`; the same happens for each additional warning in multi-file calls.
+If the binary is missing or exits unexpectedly, the extension leaves the tool output untouched. This avoids false-positive tool failures. Process output is bounded at `MAX_PROCESS_OUTPUT_BYTES` (64 KiB) and killed after `PROCESS_TIMEOUT_MS` (30 seconds); timeout output replaces any accumulated stderr so the host sees the failure cause clearly. When a post-exec check does produce a warning, the checker warning is appended as plain text to the existing tool result content and `isError` is set to `true`; the same happens for each additional warning in multi-file calls.

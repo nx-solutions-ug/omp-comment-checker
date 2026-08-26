@@ -27,7 +27,7 @@ The extension consumes these host APIs:
 | `pi.appendEntry` / `pi.sendMessage` | Optional omp-only APIs used by the self-heal path. |
 | `crypto.randomUUID()` / `Date.now()` | Used by the in-memory warning store for ids and timestamps. |
 
-The extension detects omp capabilities at runtime in `createOmpBackend(pi)`. If none of `appendEntry`, `sendMessage`, or `on` are present, the backend is unavailable and every backend method is a no-op. On plain pi the backend calls are no-ops and the `session_compact` event does not fire, so unfired warnings stay in the in-memory store only. The `session_compact` handler is registered through the host `api.on` whenever it exists.
+The extension detects omp capabilities at runtime in `createOmpBackend(pi)`. If none of `appendEntry`, `sendMessage`, or `on` are present, the backend is unavailable and every backend method is a no-op. On plain pi the backend calls are no-ops and the `session_compact` event does not fire, so unfired warnings stay in the in-memory store only. The `session_compact` handler is registered through `backend.onSessionCompact` so it is only attached when the host supports it.
 
 ## Event handlers
 
@@ -47,7 +47,7 @@ Clears the in-memory `SelfHealStore`.
 
 ### `session_compact`
 
-Under omp, re-injects unfired warnings through `backend.sendMessage` with `triggerTurn: false`. On plain pi the event never fires and the `sendMessage`/`appendEntry` calls are no-ops.
+Under omp, re-injects unfired warnings through `backend.sendMessage` with `triggerTurn: false`, then marks them fired. On plain pi the event never fires and the `sendMessage`/`appendEntry` calls are no-ops.
 
 ## Type definitions
 
@@ -61,6 +61,10 @@ The extension internally defines lightweight "like" types so it does not hard-de
 - `CommentCheckerHookInput` — the JSON payload sent to the native checker binary.
 
 These types are kept minimal to avoid coupling the package back to host internals.
+
+## `session_compact` registration
+
+`createOmpBackend(pi)` returns `onSessionCompact(handler)`, which uses `api.on("session_compact", handler)` if the host supports it. The extension in `src/index.ts` registers `session_compact` through this backend wrapper rather than directly on `api.on`, so the handler is only attached when the host exposes the omp compaction event.
 
 ## Native checker contract
 

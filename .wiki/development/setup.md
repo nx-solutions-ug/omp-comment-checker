@@ -55,14 +55,30 @@ src/
 public/
   banner.png    — README banner asset
 
+.omp/
+  agent/config.yml        — default model role mapping for agent workflows
+  commands/*.md           — prompt files for oh-my-pi agent workflows
+  rules/*.md              — extra agent rules
+  stream-log.py           — workflow log streaming helper
+
+.github/
+  workflows/*.yml         — CI, release, vouch, wiki, and oh-my-pi automation
+  ISSUE_TEMPLATE/*.yml    — bug and feature issue forms
+  CODEOWNERS              — code owner assignments
+  VOUCHED.td              — vouch policy list
+  branch-ruleset.json     — main branch protection rules
+  pull_request_template.md — contributor checklist
+
 test/
   *.test.ts     — vitest coverage for the corresponding src modules
 ```
 
 ## Release
 
-Releases run automatically on pushes to `main`; `.releaserc.json` also declares `beta` and `alpha` release branches, but the workflow trigger is currently scoped to `main` only. The `.github/workflows/release.yml` workflow first runs `npm run typecheck` and `npm run lint` with `npm ci`, generates a chronova-agent GitHub App token, verifies installed package signatures with `npm audit signatures`, captures the latest tag, and invokes `npx semantic-release` to bump `package.json`/`package-lock.json`, write `CHANGELOG.md`, publish to npm, and create a GitHub release. The workflow's follow-up release-body step rebuilds the body from the full commit range between the previous tag and the new tag, exits early when the tag did not change, and truncates at 120,000 bytes while linking to `CHANGELOG.md`. The package is configured for npm provenance in `package.json`.
+Releases run automatically on pushes to `main`; `.releaserc.json` also declares `beta` and `alpha` release branches, but the workflow trigger is currently scoped to `main` only. The `.github/workflows/release.yml` workflow first runs `npm run typecheck` and `npm run lint` with `npm ci`, generates a chronova-agent GitHub App token, verifies installed package signatures with `npm audit signatures`, captures the latest tag, and invokes `npx semantic-release` to bump `package.json`/`package-lock.json`, write `CHANGELOG.md`, publish to npm, and create a GitHub release. The workflow's follow-up release-body step rebuilds the body from the full commit range between the previous tag and the new tag, exits early when the tag did not change, and truncates at 120,000 bytes while linking to `CHANGELOG.md`. `.releaserc.json` also contains a matching 120,000-byte truncation fallback in its `releaseBodyTemplate`, and it commits `CHANGELOG.md`, `package.json`, and `package-lock.json` with the message `chore(release): ${nextRelease.version} [skip ci]`. The package is configured for npm provenance in `package.json`.
 
 The package `files` list in `package.json` includes `src`, `LICENSE`, `NOTICE`, `README.md`, and `CHANGELOG.md`; the `pi` extension entry is `./src/index.ts`.
+
+`peerDependencies` declare optional host packages (`@oh-my-pi/pi-coding-agent`, `@mariozechner/pi-coding-agent`, `@mariozechner/pi-ai`, `@mariozechner/pi-tui`) so the extension can resolve host types without hard-requiring any single runtime. They are marked optional in `peerDependenciesMeta`.
 
 For details on the full workflow set, including the vouch gate, wiki update, and auto-manage jobs, see [GitHub Actions workflows](workflows.md).

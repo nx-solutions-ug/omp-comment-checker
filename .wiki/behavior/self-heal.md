@@ -28,11 +28,11 @@ This only works under oh-my-pi. On plain pi the self-heal path is a no-op becaus
 - **unfired** until `markFired(ids)` is called with its id.
 - **cleared** on `session_start` (memory only; persisted session entries may remain on disk depending on the host).
 
-`unfired()` returns warnings sorted by ascending timestamp, so re-injected messages stay in the order the warnings originally occurred. The store uses `crypto.randomUUID()` for ids and `Date.now()` for timestamps.
+`unfired()` returns warnings sorted by ascending timestamp, so re-injected messages stay in the order the warnings originally occurred. The store uses `crypto.randomUUID()` for ids and `Date.now()` for timestamps. `session_start` calls `store.clear()` in `src/index.ts`.
 
 ## Host capability detection
 
-`createOmpBackend(pi)` checks whether `pi` has `appendEntry`, `sendMessage`, or `on`. If none are present, `available` is `false` and every backend method is a no-op. On plain pi the event never fires and the backend calls are no-ops, so the self-heal path is safe there.
+`createOmpBackend(pi)` checks whether `pi` has `appendEntry`, `sendMessage`, or `on`. If none are present, `available` is `false` and every backend method is a no-op. On plain pi the event never fires and the backend calls are no-ops, so the self-heal path is safe there. `src/index.ts` registers the `session_compact` handler through `backend.onSessionCompact` so it is only attached when the host supports it.
 
 ## Re-injected message format
 
