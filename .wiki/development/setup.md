@@ -1,13 +1,16 @@
 ---
 type: development
 title: Development setup
-description: Build, test, lint, and release the package using the commands defined in package.json.
-tags: [development, build, test, lint, contribute]
+description: Build, test, lint, and release the package using the commands
+  defined in package.json.
+tags: [ development, build, test, lint, contribute ]
+last_updated: 2026-08-28T16:41:00.980Z
+updated_by: wiki-agent
 ---
 
 # Development setup
 
-This is a strict TypeScript / ESM Node package. It uses vitest for tests, Biome v2.5.10 for linting, and semantic-release for publishing.
+This is a strict TypeScript / ESM Node package. It uses vitest for tests, Biome v2.5.11 for linting, and semantic-release for publishing.
 
 ## Install
 
