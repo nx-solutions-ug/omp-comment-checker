@@ -2,6 +2,8 @@
 type: Documentation Index
 title: "Behavior"
 description: "Files and subdirectories in Behavior."
+last_updated: "2026-08-28T09:55:18.685Z"
+updated_by: "wiki-agent"
 ---
 
 # Files
