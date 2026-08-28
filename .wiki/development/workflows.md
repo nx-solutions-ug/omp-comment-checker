@@ -1,8 +1,11 @@
 ---
 type: development
 title: GitHub Actions workflows
-description: CI, release, vouch, wiki-update, and auto-manage automation, including the chronova-agent GitHub App token used for elevated operations.
-tags: [development, workflows, ci, release, vouch, wiki, github-actions]
+description: CI, release, vouch, wiki-update, and auto-manage automation,
+  including the chronova-agent GitHub App token used for elevated operations.
+tags: [ development, workflows, ci, release, vouch, wiki, github-actions ]
+last_updated: 2026-08-28T09:10:26.287Z
+updated_by: wiki-agent
 ---
 
 # GitHub Actions workflows
@@ -84,7 +87,7 @@ The repository also ships agent automation for the oh-my-pi runtime. All are dri
 
 - **triage-issue** runs on `issues: opened` or manual dispatch. It reacts to the issue with an `eyes` reaction, runs `triage-issue.md` (which may add type/priority labels and a triage summary comment), and then dispatches `issue-triaged` to `omp-fix-issue.yml`.
 - **label-pr** runs when a PR is opened, synchronized, or marked ready for review. It checks whether the PR already has a type label (`bug`, `feature`, `enhancement`, `docs`, `chore`) and a priority label; if so, the job skips.
-- **review-pr** runs on PR open/synchronize/ready_for_review or manual dispatch. It uses `gh extension install agynio/gh-pr-review --force` to enable review submissions. On `synchronize`, a `re-review-check` job skips the review if the new commit was authored by an agent (`opencode-agent`, `opencode`, `github-actions`, `omp-agent`, or `chronova-agent`). It also prefixes the prompt with `dep:` for Dependabot/Renovate PRs and `bot:` for bot/agent-authored PRs. The job reacts to the PR with an `eyes` reaction before running the agent. The `review-pr.md` prompt deduplicates findings, resolves prior bot review threads once all findings are addressed, and approves the PR in that case.
+- **review-pr** runs on PR open/synchronize/ready_for_review or manual dispatch. It declares `permissions: contents: write, pull-requests: write, issues: write`; the `contents: write` permission is required for the `gh-pr-review` extension to resolve prior bot review threads. It uses `gh extension install agynio/gh-pr-review --force` to enable review submissions. On `synchronize`, a `re-review-check` job skips the review if the new commit was authored by an agent (`opencode-agent`, `opencode`, `github-actions`, `omp-agent`, or `chronova-agent`). It also prefixes the prompt with `dep:` for Dependabot/Renovate PRs and `bot:` for bot/agent-authored PRs. The job reacts to the PR with an `eyes` reaction before running the agent. The `review-pr.md` prompt deduplicates findings, resolves prior bot review threads once all findings are addressed, and approves the PR in that case.
 - **cancel-review-on-close / cancel-label-on-close** run when a PR is `closed`. Each acquires the concurrency group of the matching live job (`omp-review-<n>` or `omp-label-<n>`) with `cancel-in-progress: true`, forcing any in-progress agent run for that PR to cancel.
 
 ### `/omp` comment handling (`omp.yml`)

@@ -2,6 +2,8 @@
 type: Documentation Index
 title: "Wiki"
 description: "Files and subdirectories in Wiki."
+last_updated: "2026-08-28T09:10:30.052Z"
+updated_by: "wiki-agent"
 ---
 
 # Files
