@@ -4,7 +4,7 @@ title: GitHub Actions workflows
 description: CI, release, vouch, wiki-update, and auto-manage automation,
   including the chronova-agent GitHub App token used for elevated operations.
 tags: [ development, workflows, ci, release, vouch, wiki, github-actions ]
-last_updated: 2026-08-28T09:55:14.389Z
+last_updated: 2026-08-30T12:12:05.353Z
 updated_by: wiki-agent
 ---
 
@@ -60,7 +60,7 @@ Runs when a discussion comment is created.
 Runs on pushes to `main`, on a daily schedule at 08:00 UTC, and on manual dispatch.
 
 - Generates the chronova-agent app token.
-- Sets up Bun and Node 25, installs `@chronova/wiki-agent` globally, and runs `wiki --update --print --verbose --wiki`.
+- Sets up Bun and Node 25, installs `@chronova/wiki-agent` globally, and runs `wiki --update --print --verbose --wiki`. The agent runs in Ollama Cloud mode (`WIKI_OLLAMA_MODE: cloud`) using `secrets.WIKI_OLLAMA_API_KEY`, with the model taken from the `WIKI_MODEL` repo variable (default `kimi-k3`, set by `WIKI_MODEL: ${{ vars.WIKI_MODEL || 'kimi-k3' }}`).
 - If wiki content changed (excluding `.wiki/.last-update-report.md` and `.wiki/.last-updated.json`), flattens `.wiki/` with `wiki-flatten` and pushes to the repository's wiki git repo via the token in `secrets.WIKI_PUSH_TOKEN` (falling back to the app token or `GITHUB_TOKEN`).
 - Also opens a staging pull request on the source repo with the `.wiki/` changes, using branch `wiki/staging-<timestamp>`.
 - Warns and skips the wiki push if the wiki git repo has not been initialized yet.
@@ -76,7 +76,7 @@ Runs on issue and pull request open/reopen events.
 
 ## oh-my-pi agent workflows
 
-The repository also ships agent automation for the oh-my-pi runtime. All are driven by `.omp/commands/*.md` prompt files and are not part of the extension package itself. They install OMP from `https://omp.sh/install`, configure an Ollama Cloud API key from `secrets.OLLAMA_API_KEY`, and run `omp -p --model ollama-cloud/minimax-m3 --mode json` with the expanded prompt.
+The repository also ships agent automation for the oh-my-pi runtime. All are driven by `.omp/commands/*.md` prompt files and are not part of the extension package itself. They install OMP from `https://omp.sh/install`, seed an Ollama Cloud API key into `~/.omp/agent/agent.db` from `secrets.OLLAMA_API_KEY` (an `auth_credentials` row for provider `ollama-cloud`, inserted via `sqlite3`), run `omp models refresh ollama-cloud`, and then invoke `omp -p --model ollama-cloud/glm-5.3-flash --mode json` with the expanded prompt (piped through `.omp/stream-log.py`).
 
 - `omp-ci.yml` — triages issues and labels/reviews PRs using the oh-my-pi coding agent.
 - `omp-fix-issue.yml` — triggered by `repository_dispatch` with `event_type: issue-triaged`. It clones the repo, configures the agent, runs `fix-issue.md`, and creates a PR from the resulting branch via `create-pull-request`.
