@@ -4,7 +4,7 @@ title: GitHub Actions workflows
 description: CI, release, vouch, wiki-update, and auto-manage automation,
   including the chronova-agent GitHub App token used for elevated operations.
 tags: [ development, workflows, ci, release, vouch, wiki, github-actions ]
-last_updated: 2026-08-28T09:55:14.389Z
+last_updated: 2026-08-30T11:58:29.252Z
 updated_by: wiki-agent
 ---
 
@@ -76,7 +76,7 @@ Runs on issue and pull request open/reopen events.
 
 ## oh-my-pi agent workflows
 
-The repository also ships agent automation for the oh-my-pi runtime. All are driven by `.omp/commands/*.md` prompt files and are not part of the extension package itself. They install OMP from `https://omp.sh/install`, configure an Ollama Cloud API key from `secrets.OLLAMA_API_KEY`, and run `omp -p --model ollama-cloud/minimax-m3 --mode json` with the expanded prompt.
+The repository also ships agent automation for the oh-my-pi runtime. All are driven by `.omp/commands/*.md` prompt files and are not part of the extension package itself. They install OMP from `https://omp.sh/install`, configure an Ollama Cloud API key from `secrets.OLLAMA_API_KEY`, and run `omp -p --model ollama-cloud/glm-5.3-flash --mode json` with the expanded prompt.
 
 - `omp-ci.yml` — triages issues and labels/reviews PRs using the oh-my-pi coding agent.
 - `omp-fix-issue.yml` — triggered by `repository_dispatch` with `event_type: issue-triaged`. It clones the repo, configures the agent, runs `fix-issue.md`, and creates a PR from the resulting branch via `create-pull-request`.
