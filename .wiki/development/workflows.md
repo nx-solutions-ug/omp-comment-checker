@@ -15,7 +15,7 @@ tags:
     github-actions,
     code-review
   ]
-last_updated: 2026-09-03T13:56:52.124Z
+last_updated: 2026-09-03T18:43:20.524Z
 updated_by: wiki-agent
 ---
 
@@ -107,7 +107,7 @@ Dedicated PR-review workflow, split out of `omp-ci.yml`. It reacts to the PR wit
 - **dependency-review** runs only for PRs authored by `renovate[bot]` or `dependabot[bot]`. It runs `dependency-review.md`, which fetches the PR diff, researches changelogs/release notes, assesses breaking changes, and posts a review. After the agent finishes, a verification step fails the job if the agent posted neither a review nor a comment.
 - **code-review** runs for all other PRs on `opened`/`synchronize`/`ready_for_review`/`review_requested`, on `workflow_dispatch` with a `pr_number` input, and on `pull_request_review` / `pull_request_review_comment` events whose author contains `jules` (Google's Jules bot). It checks out with `fetch-depth: 0` so `git diff` against the base branch works for large diffs. A `jules-detect` step classifies Jules involvement (Jules-authored PR, Jules-submitted review, or Jules review comment) and passes `IS_JULES`/`JULES_CONTEXT` into the run. On `synchronize`, a `re-review-check` step skips the review if the new head commit was authored by an agent (`opencode-agent`, `opencode`, `github-actions`, `omp-agent`, or `chronova-agent`); `review_requested` is treated as an explicit human retrigger and never skips. It runs `review-pr.md`. A verification step fails the job if the agent posted no review and the PR has no existing threads — unless the PR modifies `omp-code-review.yml` itself, in which case verification is skipped by design (the workflow under review cannot be trusted to verify itself).
 
-The concurrency group is `omp-code-review-<pr number>` with `cancel-in-progress: true`.
+The concurrency group is `omp-code-review-<pr number>` with a conditional `cancel-in-progress`: only `pull_request` and `workflow_dispatch` events may cancel an in-flight run. Review-triggered runs (`pull_request_review` / `pull_request_review_comment`) queue behind it instead. This avoids a race where the agent's own submitted review cancels the required `code-review` check mid-flight while the replacement review-triggered run is skipped by the job conditions (review triggers are gated to Jules-authored activity), leaving the check permanently `CANCELLED` and affected PRs `UNSTABLE` (fixed in 040ac00).
 
 ### `/omp` comment handling (`omp.yml`)
 
