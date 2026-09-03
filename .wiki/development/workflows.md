@@ -1,10 +1,21 @@
 ---
 type: development
 title: GitHub Actions workflows
-description: CI, release, vouch, wiki-update, and auto-manage automation,
-  including the chronova-agent GitHub App token used for elevated operations.
-tags: [ development, workflows, ci, release, vouch, wiki, github-actions ]
-last_updated: 2026-08-30T12:12:05.353Z
+description: CI, release, vouch, wiki-update, auto-manage, and oh-my-pi agent
+  automation (triage, label, code review, fix-issue, /omp comments), including
+  the chronova-agent GitHub App token used for elevated operations.
+tags:
+  [
+    development,
+    workflows,
+    ci,
+    release,
+    vouch,
+    wiki,
+    github-actions,
+    code-review
+  ]
+last_updated: 2026-09-03T13:56:52.124Z
 updated_by: wiki-agent
 ---
 
@@ -76,18 +87,27 @@ Runs on issue and pull request open/reopen events.
 
 ## oh-my-pi agent workflows
 
-The repository also ships agent automation for the oh-my-pi runtime. All are driven by `.omp/commands/*.md` prompt files and are not part of the extension package itself. They install OMP from `https://omp.sh/install`, seed an Ollama Cloud API key into `~/.omp/agent/agent.db` from `secrets.OLLAMA_API_KEY` (an `auth_credentials` row for provider `ollama-cloud`, inserted via `sqlite3`), run `omp models refresh ollama-cloud`, and then invoke `omp -p --model ollama-cloud/glm-5.3-flash --mode json` with the expanded prompt (piped through `.omp/stream-log.py`).
+The repository also ships agent automation for the oh-my-pi runtime. All are driven by `.omp/commands/*.md` prompt files and are not part of the extension package itself. They install OMP from `https://omp.sh/install`, seed an Ollama Cloud API key into `~/.omp/agent/agent.db` from `secrets.OLLAMA_API_KEY` (an `auth_credentials` row for provider `ollama-cloud`, inserted via `sqlite3`), run `omp models refresh ollama-cloud`, and then invoke `omp -p --model ollama-cloud/glm-5.3-flash:max --mode json` with the expanded prompt (piped through `.omp/stream-log.py`).
 
-- `omp-ci.yml` — triages issues and labels/reviews PRs using the oh-my-pi coding agent.
+- `omp-ci.yml` — triages issues and labels PRs using the oh-my-pi coding agent.
+- `omp-code-review.yml` — reviews pull requests using the oh-my-pi coding agent (dependency PRs and code PRs are separate jobs).
 - `omp-fix-issue.yml` — triggered by `repository_dispatch` with `event_type: issue-triaged`. It clones the repo, configures the agent, runs `fix-issue.md`, and creates a PR from the resulting branch via `create-pull-request`.
 - `omp.yml` — general oh-my-pi integration workflow triggered by `/omp` (or `/oc`) comments on issue and PR review comments.
 
 ### `omp-ci.yml`
 
-- **triage-issue** runs on `issues: opened` or manual dispatch. It reacts to the issue with an `eyes` reaction, runs `triage-issue.md` (which may add type/priority labels and a triage summary comment), and then dispatches `issue-triaged` to `omp-fix-issue.yml`.
-- **label-pr** runs when a PR is opened, synchronized, or marked ready for review. It checks whether the PR already has a type label (`bug`, `feature`, `enhancement`, `docs`, `chore`) and a priority label; if so, the job skips.
-- **review-pr** runs on PR open/synchronize/ready_for_review or manual dispatch. It installs the `gh-pr-review` extension pinned to `v1.6.2` (`gh extension install agynio/gh-pr-review --pin v1.6.2 --force`) to enable review submissions. On `synchronize`, a `re-review-check` job skips the review if the new commit was authored by an agent (`opencode-agent`, `opencode`, `github-actions`, `omp-agent`, or `chronova-agent`). It also prefixes the prompt with `dep:` for Dependabot/Renovate PRs and `bot:` for bot/agent-authored PRs. The job reacts to the PR with an `eyes` reaction before running the agent. The `review-pr.md` prompt deduplicates findings, resolves prior bot review threads once all findings are addressed, and approves the PR in that case.
-- **cancel-review-on-close / cancel-label-on-close** run when a PR is `closed`. Each acquires the concurrency group of the matching live job (`omp-review-<n>` or `omp-label-<n>`) with `cancel-in-progress: true`, forcing any in-progress agent run for that PR to cancel.
+- **triage-issue** runs on `issues: opened` or manual dispatch. It reacts to the issue with an `eyes` reaction, runs `triage-issue.md` (which may add type/priority labels and a triage summary comment), and then dispatches `issue-triaged` to `omp-fix-issue.yml` (the dispatch runs with `if: always()`, even if triage fails). It uses the `glm-5.3-flash:max` model.
+- **label-pr** runs when a PR is opened or marked ready for review. It checks whether the PR already has a type label (`bug`, `feature`, `enhancement`, `docs`, `chore`) and a priority label (`priority: critical|high|medium|low`); if both are present, the job skips. Otherwise it runs `label-pr.md`.
+- **cancel-label-on-close** runs when a PR is `closed`. It acquires the concurrency group of the live label job (`omp-label-<n>`) with `cancel-in-progress: true`, forcing any in-progress agent run for that PR to cancel.
+
+### `omp-code-review.yml`
+
+Dedicated PR-review workflow, split out of `omp-ci.yml`. It reacts to the PR with an `eyes` reaction, installs the `gh-pr-review` extension pinned to `v1.6.2` (`gh extension install agynio/gh-pr-review --pin v1.6.2 --force`) to enable review submissions, and uses the `glm-5.3-flash:max` model. It has two mutually exclusive jobs:
+
+- **dependency-review** runs only for PRs authored by `renovate[bot]` or `dependabot[bot]`. It runs `dependency-review.md`, which fetches the PR diff, researches changelogs/release notes, assesses breaking changes, and posts a review. After the agent finishes, a verification step fails the job if the agent posted neither a review nor a comment.
+- **code-review** runs for all other PRs on `opened`/`synchronize`/`ready_for_review`/`review_requested`, on `workflow_dispatch` with a `pr_number` input, and on `pull_request_review` / `pull_request_review_comment` events whose author contains `jules` (Google's Jules bot). It checks out with `fetch-depth: 0` so `git diff` against the base branch works for large diffs. A `jules-detect` step classifies Jules involvement (Jules-authored PR, Jules-submitted review, or Jules review comment) and passes `IS_JULES`/`JULES_CONTEXT` into the run. On `synchronize`, a `re-review-check` step skips the review if the new head commit was authored by an agent (`opencode-agent`, `opencode`, `github-actions`, `omp-agent`, or `chronova-agent`); `review_requested` is treated as an explicit human retrigger and never skips. It runs `review-pr.md`. A verification step fails the job if the agent posted no review and the PR has no existing threads — unless the PR modifies `omp-code-review.yml` itself, in which case verification is skipped by design (the workflow under review cannot be trusted to verify itself).
+
+The concurrency group is `omp-code-review-<pr number>` with `cancel-in-progress: true`.
 
 ### `/omp` comment handling (`omp.yml`)
 
