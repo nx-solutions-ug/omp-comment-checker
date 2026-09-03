@@ -14,336 +14,239 @@ Use $REPO_SLUG in all subsequent gh api calls instead of {owner}/{repo}.
 Ensure the `gh-pr-review` extension is installed (it provides the inline review comment workflow):
 
 ```bash
-gh extension install agynio/gh-pr-review --pin v1.6.2 2>/dev/null || true
+gh extension install agynio/gh-pr-review --pin v1.6.2 --force 2>/dev/null || true
 ```
 
-All inline review comments are posted via `gh pr-review` subcommands, NOT `gh pr review` or `gh api`. The `gh pr review` CLI command cannot attach inline comments to specific diff lines.
+All inline review comments are posted via `gh pr-review` subcommands, NOT `gh pr review`. The built-in `gh pr review` CLI command cannot attach inline comments to specific diff lines.
 
-## Step 1: Dedup check
+## Step 0.5: Detect Jules involvement
 
-Check whether this bot has already reviewed this PR. Reviews live under the pulls API, NOT the issues API:
+Check the `IS_JULES` and `JULES_CONTEXT` environment variables (set by the CI workflow):
 
 ```bash
-gh api /repos/$REPO_SLUG/pulls/$ARGUMENTS/reviews --jq '.[] | select(.user.login | test("chronova-agent|omp-agent")) | "\(.id) \(.state) \(.body[:80])"'
+echo "IS_JULES=${IS_JULES:-false}"
+echo "JULES_CONTEXT=${JULES_CONTEXT:-}"
 ```
 
-If no prior review from this bot exists, skip to the dependency summary cleanup below and continue with the review.
+The workflow sets `IS_JULES=true` when Jules (`google-labs-jules[bot]`) is involved. The `JULES_CONTEXT` value indicates the trigger:
+- `jules-authored-pr`: Jules created this PR (either as author or on behalf of a human) — review it and address Jules directly
+- `jules-review-submitted`: Jules posted a review — read Jules' review and respond
+- `jules-review-comment`: Jules posted a review comment/suggestion — address the specific suggestion
 
-If a prior review exists, you MUST determine whether the findings are still relevant at the current PR head. Do NOT blanket-skip just because a review exists — the author may have pushed fixes. Fetch the bot's unresolved inline threads:
+After reading the PR in Step 1, also verify Jules involvement from the PR data:
+- PR author login contains `jules`
+- PR body contains `created automatically by Jules`
+- Any comment author login contains `jules`
+
+If `IS_JULES` is not set but any of these markers are found, treat `IS_JULES` as `true`.
+
+## Step 1: Read the PR
+
+Fetch PR metadata:
 
 ```bash
-gh pr-review review view --reviewer chronova-agent --unresolved --not_outdated -R $REPO_SLUG $ARGUMENTS
+gh pr view $ARGUMENTS --json title,body,labels,author,headRefOid,baseRefName --jq '{title: .title, body: .body, labels: [.labels[].name], author: .author.login, headSha: .headRefOid, baseRef: .baseRefName}'
 ```
 
-Then compare each unresolved thread's `path` + `line` against the current diff (Step 3):
-- If ALL unresolved threads are now resolved or the code at those lines has changed to address the findings, go to **Step 1b** (resolve threads and approve).
-- If some threads are still unresolved and the code hasn't changed, do NOT stop — proceed with the review. Step 6.4 will ensure you only post NEW findings not already raised in an unresolved thread. This allows the bot to re-review when the author pushes new changes that introduce new issues, while avoiding duplicate comments on unchanged lines.
+Store `headSha` — pass it as `--commit` when starting a pending review so comments anchor to the correct commit.
+Store `baseRef` — used for local git diff against base branch.
 
-Also check issue-level comments from this bot (dependency summaries, general notes):
+## Step 2: Fetch Review Threads & Evaluate Conversation History
+
+Fetch all review threads with full comment history:
 
 ```bash
-gh api /repos/$REPO_SLUG/issues/$ARGUMENTS/comments --jq '.[] | select(.user.login | test("chronova-agent|omp-agent")) | "\(.id) \(.body[:80])"'
+gh pr-review review view $ARGUMENTS -R $REPO_SLUG
 ```
 
-If any comments starting with `## Dependency Update Summary` from this bot exist, delete them so a fresh summary can be posted:
+To view unresolved threads specifically:
 
 ```bash
-COMMENT_IDS=$(gh api /repos/$REPO_SLUG/issues/$ARGUMENTS/comments --jq '.[] | select(.user.login | test("chronova-agent|omp-agent")) | select(.body | startswith("## Dependency Update Summary")) | .id')
-for id in $COMMENT_IDS; do
-  gh api -X DELETE /repos/$REPO_SLUG/issues/comments/$id
-done
+gh pr-review review view $ARGUMENTS -R $REPO_SLUG --unresolved
 ```
 
-Then continue with the review.
-
-### 1b. All findings addressed — resolve threads and approve
-
-When the bot's prior review findings have ALL been addressed at the current PR head, you MUST resolve the unresolved review threads and submit an APPROVE review. Do NOT just print "Skipped" and stop — the author needs visible confirmation that their fixes were reviewed and accepted.
-
-First, fetch ALL unresolved threads from this bot (including outdated ones, since outdated threads may still be unresolved):
+Also check top-level PR comments if relevant:
 
 ```bash
-UNRESOLVED_THREADS=$(gh pr-review threads list $ARGUMENTS --unresolved -R $REPO_SLUG)
+gh pr view $ARGUMENTS --comments
 ```
 
-This returns a JSON array where each element has a `threadId` field. Extract every `threadId` and resolve each thread:
+### Evaluate Thread Comments & Developer Justifications
+
+Examine the entire conversation history in all review threads (`reviews[].comments[].thread_comments[]` alongside the parent comment).
+Developers or PR authors often reply explaining intentional design decisions, architectural trade-offs, domain constraints, or why an implementation is correct.
+
+1. **Read all replies in thread conversations**:
+   - Inspect comments from PR authors, human reviewers, or peer agents in `thread_comments[]`.
+   - Extract technical claims, rationale, or domain context provided in comments.
+2. **Ground and verify claims against project standards & codebase**:
+   - Query `AGENTS.md` and surrounding code to verify whether the developer's claim conforms to documented project standards or intentional architecture.
+3. **Assess the impact of developer justifications**:
+   - **Sound & Justified Claims**: If the explanation provides a sound, technically valid justification (e.g. deliberate design override, documented exception, intentional API contract):
+     - **Accept the justification**: Do NOT treat this pattern as a violation or re-raise it.
+     - **Mark for auto-resolution**: If the thread is unresolved, mark the thread to be resolved in Step 3.
+     - **Update review context**: Do NOT block the PR on intentional design choices.
+   - **Unsound or Erroneous Claims**: If a reply makes a claim that introduces security vulnerabilities, breaks type safety, or causes genuine logic bugs:
+     - Do not resolve the thread.
+     - Keep the finding active and clearly explain why the justification is insufficient.
+   - **Peer Reviewer Consensus**: Respect consensus from peer reviewers or agents unless a critical bug/vulnerability is present.
+
+## Step 3: Auto-Resolve Fixed or Justified Issues
+
+For each unresolved review thread (comments with `is_resolved: false`):
+1. **Resolved by code change**: Code was modified, removed, or refactored so the reported issue no longer exists, OR the comment has `is_outdated: true`.
+2. **Resolved by valid justification**: The author or reviewer provided a sound, validated explanation in thread comments (evaluated in Step 2) demonstrating that the implementation is intentional and correct.
+
+If either condition is met, resolve the thread using DIRECT GraphQL mutation (this bypasses client-side `viewerCanResolve: false` gates):
 
 ```bash
-THREAD_IDS=$(echo "$UNRESOLVED_THREADS" | python3 -c "import sys,json; [print(t['threadId']) for t in json.load(sys.stdin)]")
-for THREAD_ID in $THREAD_IDS; do
-  gh pr-review threads resolve $ARGUMENTS --thread-id "$THREAD_ID" -R $REPO_SLUG
-done
+gh api graphql -f query='
+  mutation {
+    resolveReviewThread(input: {threadId: "[THREAD_ID]"}) {
+      thread { isResolved }
+    }
+  }'
 ```
 
-Resolve ALL unresolved threads — both outdated and non-outdated. An outdated thread that is still unresolved is one the author fixed (the code changed) but was never marked resolved; it should be resolved now.
-
-After resolving all threads, submit an APPROVE review so the PR gets a green check:
+If replying with a clarification or resolution comment before resolving:
 
 ```bash
-HEAD_SHA=$(gh pr view $ARGUMENTS --json headRefOid --jq .headRefOid)
-REVIEW_JSON=$(gh pr-review review --start --commit "$HEAD_SHA" -R $REPO_SLUG $ARGUMENTS)
+gh pr-review comments reply $ARGUMENTS \
+  -R $REPO_SLUG \
+  --thread-id "[THREAD_ID]" \
+  --body "..."
+```
+
+## Step 4: Analyze PR and Find Issues
+
+**Read the diff from the local checkout, never via `gh pr diff`.** The GitHub diff API refuses any PR above 300 files with HTTP 406 (`PullRequest.diff too_large`) and `gh pr diff` then silently prints nothing. The repository is checked out at full depth (`fetch-depth: 0`).
+
+Enumerate first, then read per directory/module:
+
+```bash
+BASE="origin/${BASE_REF:-main}"
+# List all changed files (excluding deletions)
+git diff --name-only --diff-filter=d "$BASE"...HEAD
+
+# Inspect diffs per module
+git diff "$BASE"...HEAD -- src/
+git diff "$BASE"...HEAD -- tests/
+```
+
+### Review Criteria (omp-comment-checker Standards)
+
+Check for ALL of the following (backed by `AGENTS.md`):
+
+- **TypeScript strict mode**: No `as any`, no `unknown` casts where avoidable, no `@ts-ignore`, no `@ts-expect-error`, no enums.
+- **ESM imports**: All import paths MUST use the `.js` suffix (e.g. `import { foo } from "./bar.js"`). Missing `.js` suffix breaks Node ESM resolution.
+- **No Bun APIs**: Runtime is Node.js only. Flag any use of `Bun.*`, `bun:*` imports, or Bun-specific globals.
+- **Indentation**: Tabs, not spaces. Flag space-indented code.
+- **Strings**: Double quotes for string literals. Flag single-quoted strings in TypeScript source.
+- **Biome compliance**: No `console.log` in library code (use proper logging). No unused variables. No dead code. No empty catch blocks. Biome is the linter — do not flag issues Biome handles automatically (formatting, import ordering).
+- **Test style**: Vitest tests MUST use `#given .. #when .. #then` in `describe`/`it` labels OR `// given / // when / // then` body comments. Flag tests that use plain `should ...` descriptions or raw assertion blocks without structure.
+- **Public extension API only**: No imports from `@oh-my-pi/pi-coding-agent` internal modules outside the documented public extension API. No coupling back to omo or senpi internal source paths.
+- **Self-heal path safety**: The self-heal path (`pi.appendEntry`, `pi.sendMessage`, `pi.on("session_compact", ...)`) MUST be a no-op when the host does not provide those APIs — guard every call with an existence check.
+- **apply_patch & edit modes**: Changes to write/edit/multiedit/apply_patch MUST keep existing tests green and MUST NOT drop coverage of OMO-compatible metadata, raw Codex patch fallback, or `EditToolDetails.perFileResults`.
+- **Security**: No exposed secrets. No hardcoded tokens or API keys.
+- **Code Quality**: No dead code, unused variables, or unreachable code. No empty catch blocks.
+
+**What to Avoid**:
+- Do NOT comment on pre-existing code outside of this PR's diff.
+- Do NOT comment on formatting that Biome handles automatically (whitespace, import ordering, trailing commas).
+
+## Step 5: Deduplicate Findings
+
+For each finding identified in Step 4, check UNRESOLVED threads for semantic matches:
+- Same file + same issue type within nearby lines (allow ±5 line shift) = DUPLICATE (skip)
+- Already discussed and pending resolution in an active thread = DUPLICATE (skip)
+- Same file + different function/root cause = NEW (include)
+
+Categorize into **new_issues** and **old_issues**.
+
+## Step 6: Mapping Findings to Diff Lines
+
+GitHub inline review comments MUST reference a line that exists in the PR diff:
+- **Added/context lines** (RIGHT side): `--side RIGHT`, count line numbers from `+NEW_START` in the diff hunk header.
+- **Removed lines** (LEFT side): `--side LEFT`, count line numbers from `-OLD_START` in the diff hunk header.
+- Findings that do not map to a specific diff line belong in the review `--body` summary, not inline.
+
+## Step 7: Post Review
+
+**Decision logic:**
+1. `new_issues` has items → Submit review with `event=REQUEST_CHANGES` and all inline comments.
+2. `new_issues` empty + unresolved threads == 0 (all issues either fixed, justified & resolved, or clean) → Submit review with `event=APPROVE` (no comments).
+3. `new_issues` empty + unresolved threads > 0 (genuine issues still legitimately outstanding without sound justification) → **Do NOT submit a review** (existing inline comments remain visible).
+
+### Submit Batched Review with Inline Comments
+
+```bash
+# 1. Start pending review pinned to HEAD SHA
+REVIEW_JSON=$(gh pr-review review --start $ARGUMENTS \
+  -R $REPO_SLUG \
+  --commit "$HEAD_SHA")
 REVIEW_ID=$(echo "$REVIEW_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
-gh pr-review review --submit --review-id "$REVIEW_ID" --event APPROVE --body "All review findings have been addressed. Threads resolved." -R $REPO_SLUG $ARGUMENTS
-```
 
-Then print:
-
-```
-Reviewed PR #$ARGUMENTS (re-review): APPROVE — all prior findings addressed, N threads resolved.
-```
-
-And stop. Do not proceed to Step 2.
-
-## Step 2: Read the PR
-
-```bash
-gh pr view $ARGUMENTS --json title,body,labels,author,headRefOid --jq '{title: .title, body: .body, labels: [.labels[].name], author: .author.login, headSha: .headRefOid}'
-```
-
-Store the `headSha` value — you will pass it as `--commit` when starting the pending review so inline comments anchor to the correct commit.
-
-## Step 3: Read the diff
-
-```bash
-gh pr diff $ARGUMENTS
-```
-
-You MUST parse the diff to map each finding to a specific file path and line number. Inline review comments require a `--path` and `--line` that exist in the PR diff. See **Step 6: Mapping findings to diff lines** for the exact rules.
-
-## Step 4: Determine review type from the PR author
-
-- If author is `renovate[bot]` or `dependabot[bot]` → **dependency PR**: follow Step 5a
-- If author contains `[bot]` → **bot-authored PR**: follow Step 5b
-- Otherwise → **human-authored PR**: follow Step 5c
-
-## Step 5: Conduct the review
-
-### 5a. Dependency PR review
-
-1. From the diff, list every package version change (old → new). Focus on `package.json`, `package-lock.json`, `yarn.lock`, or `pnpm-lock.yaml` changes.
-2. For each changed package, research its changelog for: breaking changes, security fixes, deprecations, and peer dependency changes.
-3. Check whether changed APIs or exports are used in `src/`. Search for imports of the changed packages.
-4. Check if peer dependency changes affect other installed packages.
-5. **If the PR author is `renovate[bot]`**, find the Renovate Dashboard issue and include a link in the summary:
-
-```bash
-DASHBOARD_ISSUE=$(gh issue list --search "Renovate Dashboard" --json number --jq '.[0].number')
-```
-
-If found, include a line at the bottom of the summary comment:
-
-> 📋 Tracked in #<issue_number>
-
-6. Post a **single** Dependency Update Summary comment using `gh pr comment $ARGUMENTS --body "..."` with this format:
-
-```markdown
-## Dependency Update Summary
-
-| Package | Change | Type | Recommendation |
-|---------|--------|------|----------------|
-| pkg-name | 1.2.3 → 1.2.4 | patch / minor / major | SAFE / REVIEW / ACTION REQUIRED |
-
-### Notes
-- [Per-package notes on breaking changes, security fixes, deprecations, peer deps, or usage in src]
-```
-
-Assign recommendation per package:
-- **SAFE**: Patch or minor update with no breaking changes and no usage of changed APIs in `src/`.
-- **REVIEW**: Minor update with deprecations, or changed APIs are used in `src/` but no known breakage.
-- **ACTION REQUIRED**: Major version with breaking changes, or a security vulnerability.
-
-Dependency PRs do NOT use the inline-review submission in Step 7. Stop after posting the summary comment.
-
-### 5b. Bot-authored PR review
-
-1. Read the PR description and diff. Summarize the change intent in one paragraph.
-2. Review for: bugs, type safety (`as any`, `@ts-ignore`), security issues, convention violations per AGENTS.md.
-3. Deduplicate against existing unresolved review threads (see Step 6.4).
-4. Submit the review per Step 7 — `REQUEST_CHANGES` for bugs/security, `APPROVE` for clean changes.
-
-### 5c. Human-authored PR review
-
-1. Read the PR description and diff. Summarize the change in one paragraph.
-2. Review for: bugs, type safety, security, AGENTS.md conventions (imports, Prisma, Redis, Zod, error handling, null semantics), missing tests, hardcoded values.
-3. Deduplicate against existing unresolved review threads (see Step 6.4).
-4. Submit the review per Step 7 — `REQUEST_CHANGES` for bugs/security/type safety, `APPROVE` for clean changes or minor nits only.
-
-## Step 6: Mapping findings to diff lines
-
-GitHub inline review comments MUST reference a line that exists in the PR diff. A comment that points at a line not in the diff will be rejected with an error. Follow these rules exactly.
-
-### 6.1 Parse the diff structure
-
-Each diff hunk looks like:
-
-```diff
-@@ -40,7 +40,12 @@ function foo() {
-   const a = 1;
-   const b = 2;
--  const c = 3;
-+  const c = 4;
-+  const d = 5;
-```
-
-- The `@@ -OLD_START,OLD_LEN +NEW_START,NEW_LEN @@` header tells you the starting line in both the old (left) and new (right) file.
-- Lines starting with ` ` (space) are context lines — present in both sides.
-- Lines starting with `-` are removed lines — they exist on the LEFT side only.
-- Lines starting with `+` are added lines — they exist on the RIGHT side only.
-
-### 6.2 Compute the line number for a finding
-
-For a finding on an **added or context line** (RIGHT side):
-- `--side RIGHT` (this is the default if omitted, but pass it explicitly for clarity)
-- `--line`: the line number in the new (post-change) file. Compute it by counting from `NEW_START` in the hunk header: the first line after the `@@` header is `NEW_START`, the next is `NEW_START + 1`, etc. Context lines and `+` lines both count; `-` lines do NOT count toward the RIGHT side.
-
-For a finding on a **removed line** (LEFT side):
-- `--side LEFT`
-- `--line`: the line number in the old (pre-change) file. Compute it by counting from `OLD_START` in the hunk header: the first line after the `@@` header is `OLD_START`, the next is `OLD_START + 1`, etc. Context lines and `-` lines both count; `+` lines do NOT count toward the LEFT side.
-
-### 6.3 Multi-line range comments
-
-To comment on a range of lines (e.g. a multi-line block), set:
-- `--start-line`: the first line of the range.
-- `--start-side`: same as `--side`.
-- `--line`: the last line of the range.
-- `--side`: `RIGHT` for added lines, `LEFT` for removed lines.
-
-Both `--start-line` and `--line` MUST be on the same side and MUST both exist in the diff. A single-line comment omits `--start-line`/`--start-side`.
-
-### 6.4 Deduplicate against existing inline threads
-
-Before adding comments, fetch existing unresolved inline review threads from this bot:
-
-```bash
-gh pr-review review view --reviewer chronova-agent --states CHANGES_REQUESTED,COMMENTED,APPROVED --unresolved --not_outdated -R $REPO_SLUG $ARGUMENTS
-```
-
-This returns a JSON report of reviews with their inline comment threads. For each finding you plan to post, check if an existing comment already covers the same `path` + `line` with the same concern. If so, skip it — do not post duplicates. Only post NEW findings not already raised in an unresolved thread.
-
-### 6.5 Findings that cannot be mapped to a line
-
-Some findings are general (e.g. "missing tests", "architecture concern", "naming convention") and do not map to a specific diff line. Put these in the review `--body` (the review summary) as bullet points under a `## Summary` heading when you submit — do NOT force them into inline comments with guessed line numbers. Inline comments with a wrong line will cause the `--add-comment` command to fail.
-
-## Step 7: Common checks (all review types)
-
-- **Type safety**: No `as any`, no `@ts-ignore` / `@ts-expect-error` outside test files.
-- **Zod validation**: All API route inputs are validated with Zod v4 schemas.
-- **Prisma imports**: All Prisma usage imports from `@/lib/prisma`, never `new PrismaClient()`.
-- **Redis imports**: All Redis usage imports from `@/lib/redis`, never raw `ioredis`.
-- **Security**: No exposed secrets, no SQL injection, proper auth checks, CSRF on state-changing endpoints.
-
-## Step 8: Submit the review with inline comments
-
-You MUST submit the review via the `gh pr-review` extension's pending review workflow — NOT via `gh pr review`. The workflow is: start a pending review, add inline comments one at a time, then submit with APPROVE/REQUEST_CHANGES/COMMENT.
-
-### 8.1 Start a pending review
-
-Open a pending review anchored to the PR head commit:
-
-```bash
-REVIEW_JSON=$(gh pr-review review --start --commit <HEAD_SHA> -R $REPO_SLUG $ARGUMENTS)
-REVIEW_ID=$(echo "$REVIEW_JSON" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
-echo "Pending review: $REVIEW_ID"
-```
-
-The `--commit` value is the head SHA from Step 2. The returned `id` is a GraphQL node ID starting with `PRR_` — you MUST capture it for the subsequent commands.
-
-### 8.2 Add inline comments
-
-For each line-specific finding, add an inline comment to the pending review:
-
-````
-gh pr-review review --add-comment \
+# 2. Add each inline comment using the captured REVIEW_ID
+gh pr-review review --add-comment $ARGUMENTS \
+  -R $REPO_SLUG \
   --review-id "$REVIEW_ID" \
-  --path "src/lib/foo.ts" \
+  --path "src/lib/example.ts" \
   --line 42 \
   --side RIGHT \
-  --body "**[P2]** The variable name `usr` is unclear — use the full name for readability.
+  --body "**[P1]** Issue description and rationale.
 
-```suggestion
-const user = await getUserById(id);
-```" \
-  -R $REPO_SLUG $ARGUMENTS
-````
+\`\`\`suggestion
+replacement code here
+\`\`\`"
 
-For multi-line ranges:
-
-````
-gh pr-review review --add-comment \
+# 3. Submit the review
+gh pr-review review --submit $ARGUMENTS \
+  -R $REPO_SLUG \
   --review-id "$REVIEW_ID" \
-  --path "src/lib/foo.ts" \
-  --start-line 40 \
-  --start-side RIGHT \
-  --line 45 \
-  --side RIGHT \
-  --body "**[P2]** These lines can be simplified — use early return.
-
-```suggestion
-if (!user) return null;
-return user;
-```" \
-  -R $REPO_SLUG $ARGUMENTS
-````
-
-Comment body conventions:
-- Start each inline `--body` with a severity tag: `[P0]` critical, `[P1]` high-impact bug/security, `[P2]` moderate defect, `[P3]` low-risk nit. Then state the issue concisely and what to change.
-- **Include a `suggestion` block whenever you can propose a concrete code fix.** GitHub renders `` ```suggestion `` fenced blocks inside inline review comments as apply-able "Commit suggestion" buttons. This is the primary mechanism for code suggestions — the PR author can apply the fix with one click. Format:
-
-  ````
-  **[P2]** The variable name `usr` is unclear.
-
-  ```suggestion
-  const user = await getUserById(id);
-  ```
-  ````
-
-  The suggestion block content MUST be valid replacement code for the commented line(s). For multi-line ranges (when using `--start-line`), the suggestion MUST cover the entire range from `start_line` to `line`. Do NOT include diff markers (`+`/`-`) in the suggestion — only the replacement code.
-
-  Only omit the `suggestion` block when the finding is purely observational (e.g. "this function is too complex, consider refactoring") and no concrete replacement can be proposed. In that case, describe the issue and the recommended approach in prose.
-- Every `--path` + `--line` MUST exist in the PR diff (Step 3). If `--add-comment` fails with an error, the most likely cause is a wrong `--path`/`--line`. Re-read the diff for that file, recompute the correct line number per Step 6, and retry once. If it still fails, skip that comment and continue with the rest — do not lose the entire review over one bad line.
-
-If there are no line-specific findings, skip this step — a body-only review is valid (submit with `--event COMMENT` or `--event APPROVE` and no inline comments).
-
-### 8.3 Submit the review
-
-Finalize the pending review:
-
-```bash
-gh pr-review review --submit \
-  --review-id "$REVIEW_ID" \
-  --event "REQUEST_CHANGES" \
+  --event REQUEST_CHANGES \
   --body "## Code Review
 
-<one-paragraph summary of the change>
-
-## Summary
-- <general findings as bullet points, if any — these are findings that do not map to a specific diff line>" \
-  -R $REPO_SLUG $ARGUMENTS
+Summary of findings..."
 ```
 
-Event types:
-- `APPROVE`: clean review, no blocking issues. `--body` is optional.
-- `REQUEST_CHANGES`: bugs, security issues, type safety violations. `--body` is required.
-- `COMMENT`: non-blocking observations, suggestions. `--body` is required.
+Comment body conventions:
+- Start each inline body with severity tag: `[P0]` critical/security, `[P1]` high-impact bug, `[P2]` defect/convention violation, `[P3]` nit.
+- **Include a `suggestion` block whenever proposing a concrete code fix.** GitHub renders `` ```suggestion `` fenced blocks inside inline review comments as apply-able "Commit suggestion" buttons.
+- The suggestion block content MUST be valid replacement code without diff markers (`+`/`-`).
 
-If the submit fails with GraphQL errors, the JSON response will contain `"status": "Review submission failed"` and an `errors` array. Read the errors, fix the issue (most commonly a bad line number in an inline comment — remove that comment's `--add-comment` call), and resubmit. If inline comments are the problem and you cannot resolve them, you can submit the pending review as `COMMENT` with just the `--body` summary so the review is not lost.
+### For APPROVE (clean PR, single atomic call):
 
-## Step 9: Print summary
+```bash
+gh api \
+  --method POST \
+  -H "Accept: application/vnd.github+json" \
+  /repos/$REPO_SLUG/pulls/$ARGUMENTS/reviews \
+  -f event='APPROVE' \
+  -f commit_id="$HEAD_SHA"
+```
+
+### When Jules is involved (`IS_JULES=true`):
+The review body MUST start with `@jules` on the first line so Jules detects and acts on the review:
+
+```markdown
+@jules
+
+[Review content...]
+```
+
+## Step 8: Print Summary
 
 Print a single summary line:
 
 ```
-Reviewed PR #$ARGUMENTS (<type>): <APPROVE / REQUEST_CHANGES / COMMENT> — <one-line summary>. <N> inline comments posted.
+Reviewed PR #$ARGUMENTS: <APPROVE / REQUEST_CHANGES / COMMENT> — <one-line summary>. <N> inline comments posted.
 ```
 
 ## Rules
-
-- Do NOT push commits or modify any files.
-- Do NOT apply labels.
-- Do NOT merge the PR.
-- Deduplicate findings against existing unresolved review threads before posting (Step 6.4).
-- Use `gh pr-review` subcommands for code reviews with inline comments — NEVER use `gh pr review` for reviews that need inline comments. `gh pr review` only posts a body and cannot attach comments to diff lines.
-- Use `gh pr comment $ARGUMENTS` for dependency update tables — delete older summary comments before posting a fresh one (Step 1 handles this).
-- You MUST perform the dedup check in Step 1 before any other action. When all prior findings are addressed, resolve all unresolved threads and submit APPROVE (Step 1b) — do NOT just print "Skipped" and stop. Old dependency summary comments are deleted in Step 1 so a fresh one can be posted.
-- MUST resolve the repository slug before any gh api calls. Use the GH_REPO environment variable if available.
-- Every inline comment `--path` + `--line` MUST exist in the PR diff. If you are not certain a line exists in the diff, put the finding in the review `--body` instead — a body-only finding is always safe; a wrong inline line fails the `--add-comment` command.
+- Do NOT push commits or modify repository files.
+- Do NOT apply labels or merge the PR.
+- Always read diff locally against `origin/${BASE_REF:-main}`, never via `gh pr diff`.
+- Auto-resolve threads via direct GraphQL `resolveReviewThread` mutation when issues are fixed or justified.
+- Evaluate thread replies and respect sound developer justifications.
+- Use `gh pr-review` subcommands for inline comments, passing captured `--review-id`.
+- Anchor reviews to the exact HEAD SHA.
