@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.3.1...v1.3.2) (2026-09-04)
+
+
+### Bug Fixes
+
+* **deps:** update biome and vitest dependencies and add workflow_dispatch ([b9e15eb](https://github.com/nx-solutions-ug/omp-comment-checker/commit/b9e15eb4bad42b41d8a60f988482431c1afdbac4))
+
 ## [1.3.1](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.3.0...v1.3.1) (2026-08-13)
 
 
