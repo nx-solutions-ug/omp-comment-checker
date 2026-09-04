@@ -1,3 +1,10 @@
+## [1.3.3](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.3.2...v1.3.3) (2026-09-04)
+
+
+### Bug Fixes
+
+* publish release with id-token write permission ([00ca837](https://github.com/nx-solutions-ug/omp-comment-checker/commit/00ca8370ecbd928429cb63af348ae735fa156702))
+
 ## [1.3.2](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.3.1...v1.3.2) (2026-09-04)
 
 
