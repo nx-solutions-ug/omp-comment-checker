@@ -15,7 +15,7 @@ tags:
     github-actions,
     code-review
   ]
-last_updated: 2026-09-03T18:43:20.524Z
+last_updated: 2026-09-04T18:42:34.326Z
 updated_by: wiki-agent
 ---
 
@@ -71,7 +71,7 @@ Runs when a discussion comment is created.
 Runs on pushes to `main`, on a daily schedule at 08:00 UTC, and on manual dispatch.
 
 - Generates the chronova-agent app token.
-- Sets up Bun and Node 25, installs `@chronova/wiki-agent` globally, and runs `wiki --update --print --verbose --wiki`. The agent runs in Ollama Cloud mode (`WIKI_OLLAMA_MODE: cloud`) using `secrets.WIKI_OLLAMA_API_KEY`, with the model taken from the `WIKI_MODEL` repo variable (default `kimi-k3`, set by `WIKI_MODEL: ${{ vars.WIKI_MODEL || 'kimi-k3' }}`).
+- Sets up Bun and Node 25, installs `@chronova/wiki-agent` globally, and runs `wiki --update --print --verbose --wiki`. The agent runs in Ollama Cloud mode (`WIKI_OLLAMA_MODE: cloud`) using `secrets.WIKI_OLLAMA_API_KEY`, with the model taken from the `WIKI_MODEL` repo variable (default `glm-5.3-flash`, set by `WIKI_MODEL: ${{ vars.WIKI_MODEL || 'glm-5.3-flash' }}`).
 - If wiki content changed (excluding `.wiki/.last-update-report.md` and `.wiki/.last-updated.json`), flattens `.wiki/` with `wiki-flatten` and pushes to the repository's wiki git repo via the token in `secrets.WIKI_PUSH_TOKEN` (falling back to the app token or `GITHUB_TOKEN`).
 - Also opens a staging pull request on the source repo with the `.wiki/` changes, using branch `wiki/staging-<timestamp>`.
 - Warns and skips the wiki push if the wiki git repo has not been initialized yet.
