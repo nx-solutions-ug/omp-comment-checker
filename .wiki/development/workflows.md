@@ -15,7 +15,7 @@ tags:
     github-actions,
     code-review
   ]
-last_updated: 2026-09-04T18:42:34.326Z
+last_updated: 2026-09-09T02:08:30.609Z
 updated_by: wiki-agent
 ---
 
@@ -68,7 +68,7 @@ Runs when a discussion comment is created.
 
 ## Wiki update (`update-wiki.yml`)
 
-Runs on pushes to `main`, on a daily schedule at 08:00 UTC, and on manual dispatch.
+Runs on a daily schedule at 00:00 UTC (`cron: "0 0 * * *"`), plus manual dispatch. There is no `push` trigger.
 
 - Generates the chronova-agent app token.
 - Sets up Bun and Node 25, installs `@chronova/wiki-agent` globally, and runs `wiki --update --print --verbose --wiki`. The agent runs in Ollama Cloud mode (`WIKI_OLLAMA_MODE: cloud`) using `secrets.WIKI_OLLAMA_API_KEY`, with the model taken from the `WIKI_MODEL` repo variable (default `glm-5.3-flash`, set by `WIKI_MODEL: ${{ vars.WIKI_MODEL || 'glm-5.3-flash' }}`).
