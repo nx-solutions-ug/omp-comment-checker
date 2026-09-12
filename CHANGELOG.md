@@ -1,3 +1,10 @@
+## [1.3.5](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.3.4...v1.3.5) (2026-09-12)
+
+
+### Bug Fixes
+
+* **ci:** quote command descriptions containing a colon ([c64d120](https://github.com/nx-solutions-ug/omp-comment-checker/commit/c64d12024411cd997e4969794cae70f0cbeeccbc))
+
 ## [1.3.4](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.3.3...v1.3.4) (2026-09-12)
 
 
