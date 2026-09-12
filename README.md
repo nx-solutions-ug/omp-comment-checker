@@ -122,10 +122,10 @@ guidance.
 ## Development
 
 ```bash
-npm install
-npm test
-npm run typecheck
-npm run check
+bun install
+bun run test
+bun run type-check
+bun run check
 npm pack --dry-run
 omp -e ./src/index.ts
 pi  -e ./src/index.ts

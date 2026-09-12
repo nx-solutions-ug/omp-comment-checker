@@ -18,10 +18,10 @@ as session entries and re-injected into context on the next
 
 ## Commands
 
-- `npm install` — install dependencies.
-- `npm test` — run vitest once.
-- `npm run typecheck` — strict TypeScript check.
-- `npm run check` — type check + biome.
+- `bun install` — install dependencies.
+- `bun run test` — run vitest once.
+- `bun run type-check` — strict TypeScript check.
+- `bun run check` — type check + oxlint + oxfmt.
 - `npm pack --dry-run` — release package smoke test.
 - `omp -e ./src/index.ts` — load the extension into a local oh-my-pi session for manual smoke testing.
 - `pi -e ./src/index.ts` — load the extension into a local pi session for manual smoke testing.
