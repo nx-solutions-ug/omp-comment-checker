@@ -1,3 +1,10 @@
+## [1.3.4](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.3.3...v1.3.4) (2026-09-12)
+
+
+### Bug Fixes
+
+* **ci:** bind the head SHA with real jq, not gh api --jq ([bbf19bf](https://github.com/nx-solutions-ug/omp-comment-checker/commit/bbf19bff426096ae847aa63440f6777e0d13b099))
+
 ## [1.3.3](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.3.2...v1.3.3) (2026-09-04)
 
 
