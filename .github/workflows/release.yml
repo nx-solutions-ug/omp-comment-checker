@@ -20,20 +20,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: '25'
-          cache: 'npm'
+          bun-version: '1.4.2'
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Run TypeScript type check
-        run: npm run typecheck
+        run: bun run type-check
 
-      - name: Run ESLint
-        run: npm run lint
+      - name: Run oxlint
+        run: bun run lint
+
+      - name: Check formatting
+        run: bun run format:check
 
   # Run semantic-release if tests pass
   release:
@@ -60,17 +62,20 @@ jobs:
           client-id: ${{ secrets.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
+      # setup-node stays in the release job only: @semantic-release/npm
+      # shells out to the npm CLI to publish. Everything else runs on bun.
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
           node-version: '25'
-          cache: 'npm'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.4.2'
 
       - name: Install dependencies
-        run: npm ci
-
-      - name: Verify the integrity of provenance attestations and registry signatures for installed dependencies
-        run: npm audit signatures
+        run: bun install --frozen-lockfile
 
       - name: Capture latest tag before release
         id: pre-tag
