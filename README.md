@@ -26,9 +26,9 @@ the next session compaction so the LLM sees it again on the next turn.
 Pi and omp share the same extension shape, but omp ships two extra
 capabilities this checker uses to recover from comment-detected output:
 
-| Capability | What the checker does with it |
-| --- | --- |
-| `pi.appendEntry(customType, data)` | Persists each unfired warning to the session file. |
+| Capability                         | What the checker does with it                                            |
+| ---------------------------------- | ------------------------------------------------------------------------ |
+| `pi.appendEntry(customType, data)` | Persists each unfired warning to the session file.                       |
 | `pi.sendMessage(content, options)` | Re-injects unresolved warnings as a custom message on `session_compact`. |
 
 The fork detects the host at load time. If `appendEntry` / `sendMessage`
@@ -37,18 +37,18 @@ upstream 0.1.0 exactly.
 
 ## Behavior
 
-| Case | Result |
-|------|--------|
-| `write` / `edit` called (pre-exec) | blocks the call when the checker flags the proposed content; the LLM sees an explicit rejection reason that names the blocked tool, the file path, states the file was NOT modified, includes the checker warning, and shows the `skipCommentCheck: true` override hint |
-| `write` succeeds | checks the written `content` |
-| `edit` succeeds | checks `oldString` / `newString` |
-| `multiedit` succeeds | checks the complete `edits` payload |
-| `apply_patch` succeeds with OMO metadata | checks each metadata file using `before` / `after`, skips deletes |
-| `apply_patch` succeeds without metadata | falls back to raw Codex patch parsing |
-| omp `edit` tool (any mode: `hashline` / `patch` / `replace` / `apply_patch`) | reads `details.perFileResults` for `oldText` / `newText` per affected file |
-| checker exits `2` (post-exec) | appends the warning message to the tool result, marks the result `isError: true`, and fires the self-heal path |
-| checker binary missing | leaves tool output unchanged, no self-heal, pre-exec passes through |
-| checker exits unexpectedly | leaves tool output unchanged, no self-heal |
+| Case                                                                         | Result                                                                                                                                                                                                                                                                  |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `write` / `edit` called (pre-exec)                                           | blocks the call when the checker flags the proposed content; the LLM sees an explicit rejection reason that names the blocked tool, the file path, states the file was NOT modified, includes the checker warning, and shows the `skipCommentCheck: true` override hint |
+| `write` succeeds                                                             | checks the written `content`                                                                                                                                                                                                                                            |
+| `edit` succeeds                                                              | checks `oldString` / `newString`                                                                                                                                                                                                                                        |
+| `multiedit` succeeds                                                         | checks the complete `edits` payload                                                                                                                                                                                                                                     |
+| `apply_patch` succeeds with OMO metadata                                     | checks each metadata file using `before` / `after`, skips deletes                                                                                                                                                                                                       |
+| `apply_patch` succeeds without metadata                                      | falls back to raw Codex patch parsing                                                                                                                                                                                                                                   |
+| omp `edit` tool (any mode: `hashline` / `patch` / `replace` / `apply_patch`) | reads `details.perFileResults` for `oldText` / `newText` per affected file                                                                                                                                                                                              |
+| checker exits `2` (post-exec)                                                | appends the warning message to the tool result, marks the result `isError: true`, and fires the self-heal path                                                                                                                                                          |
+| checker binary missing                                                       | leaves tool output unchanged, no self-heal, pre-exec passes through                                                                                                                                                                                                     |
+| checker exits unexpectedly                                                   | leaves tool output unchanged, no self-heal                                                                                                                                                                                                                              |
 
 ## Self-heal flow
 

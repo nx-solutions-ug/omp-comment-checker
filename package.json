@@ -1,96 +1,105 @@
 {
-	"name": "@chronova/omp-comment-checker",
-	"version": "1.3.5",
-	"description": "Comment checker hook extension for oh-my-pi (omp). Runs @code-yeongyu/comment-checker after write, edit, multiedit, apply_patch, hashline, patch, and replace, then self-heals via omp's session_compact + TUI notifications.",
-	"type": "module",
-	"license": "MIT",
-	"homepage": "https://github.com/nx-solutions-ug/omp-comment-checker",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/nx-solutions-ug/omp-comment-checker.git",
-		"directory": "."
-	},
-	"bugs": {
-		"url": "https://github.com/nx-solutions-ug/omp-comment-checker/issues"
-	},
-	"keywords": [
-		"oh-my-pi",
-		"omp",
-		"pi",
-		"pi-mono",
-		"pi-coding-agent",
-		"pi-extension",
-		"coding-agent",
-		"comment-checker",
-		"comments",
-		"hooks",
-		"self-heal",
-		"typescript"
-	],
-	"pi": {
-		"extensions": [
-			"./src/index.ts"
-		]
-	},
-	"files": [
-		"src",
-		"LICENSE",
-		"NOTICE",
-		"README.md",
-		"CHANGELOG.md"
-	],
-	"scripts": {
-		"test": "vitest --run",
-		"test:watch": "vitest",
-		"typecheck": "tsgo --noEmit",
-		"lint": "biome check .",
-		"lint:fix": "biome check --write .",
-		"check": "tsgo --noEmit && biome check .",
-		"semantic-release": "semantic-release"
-	},
-	"publishConfig": {
-		"access": "public",
-		"provenance": true
-	},
-	"peerDependencies": {
-		"@mariozechner/pi-ai": "*",
-		"@mariozechner/pi-coding-agent": "*",
-		"@mariozechner/pi-tui": "*",
-		"@oh-my-pi/pi-coding-agent": "*"
-	},
-	"peerDependenciesMeta": {
-		"@mariozechner/pi-ai": {
-			"optional": true
-		},
-		"@mariozechner/pi-coding-agent": {
-			"optional": true
-		},
-		"@mariozechner/pi-tui": {
-			"optional": true
-		},
-		"@oh-my-pi/pi-coding-agent": {
-			"optional": true
-		}
-	},
-	"dependencies": {
-		"@code-yeongyu/comment-checker": "^0.8.0"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "2.5.13",
-		"@mariozechner/pi-ai": "*",
-		"@semantic-release/changelog": "^7.0.0",
-		"@semantic-release/commit-analyzer": "^13.0.1",
-		"@semantic-release/git": "^11.0.0",
-		"@semantic-release/github": "^12.0.0",
-		"@semantic-release/npm": "^13.0.0",
-		"@semantic-release/release-notes-generator": "^14.1.1",
-		"@types/node": "^25.9.1",
-		"@typescript/native-preview": "^7.0.0-dev.20260604.1",
-		"semantic-release": "^25.0.0",
-		"typescript": "^6.0.3",
-		"vitest": "^5.0.0"
-	},
-	"engines": {
-		"node": ">=24.0.0"
-	}
+  "name": "@chronova/omp-comment-checker",
+  "version": "1.3.5",
+  "description": "Comment checker hook extension for oh-my-pi (omp). Runs @code-yeongyu/comment-checker after write, edit, multiedit, apply_patch, hashline, patch, and replace, then self-heals via omp's session_compact + TUI notifications.",
+  "keywords": [
+    "coding-agent",
+    "comment-checker",
+    "comments",
+    "hooks",
+    "oh-my-pi",
+    "omp",
+    "pi",
+    "pi-coding-agent",
+    "pi-extension",
+    "pi-mono",
+    "self-heal",
+    "typescript"
+  ],
+  "homepage": "https://github.com/nx-solutions-ug/omp-comment-checker",
+  "bugs": {
+    "url": "https://github.com/nx-solutions-ug/omp-comment-checker/issues"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nx-solutions-ug/omp-comment-checker.git",
+    "directory": "."
+  },
+  "files": [
+    "src",
+    "LICENSE",
+    "NOTICE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "type": "module",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "lint": "oxlint --react-plugin --vitest-plugin --import-plugin",
+    "lint:fix": "oxlint --react-plugin --vitest-plugin --import-plugin --fix",
+    "check": "tsgo --noEmit && oxlint --react-plugin --vitest-plugin --import-plugin && oxfmt --check",
+    "semantic-release": "semantic-release",
+    "type-check": "tsgo --noEmit",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "@code-yeongyu/comment-checker": "^0.8.0"
+  },
+  "devDependencies": {
+    "@mariozechner/pi-ai": "*",
+    "@semantic-release/changelog": "^7.0.0",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/git": "^11.0.0",
+    "@semantic-release/github": "^12.0.0",
+    "@semantic-release/npm": "^13.0.0",
+    "@semantic-release/release-notes-generator": "^14.1.1",
+    "@types/node": "^25.9.1",
+    "@typescript/native-preview": "^7.0.0-dev.20260604.1",
+    "husky": "^9.1.7",
+    "oxfmt": "^0.67.0",
+    "oxlint": "^1.82.0",
+    "semantic-release": "^25.0.0",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.0"
+  },
+  "peerDependencies": {
+    "@mariozechner/pi-ai": "*",
+    "@mariozechner/pi-coding-agent": "*",
+    "@mariozechner/pi-tui": "*",
+    "@oh-my-pi/pi-coding-agent": "*"
+  },
+  "peerDependenciesMeta": {
+    "@mariozechner/pi-ai": {
+      "optional": true
+    },
+    "@mariozechner/pi-coding-agent": {
+      "optional": true
+    },
+    "@mariozechner/pi-tui": {
+      "optional": true
+    },
+    "@oh-my-pi/pi-coding-agent": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "packageManager": "bun@1.4.2",
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "trustedDependencies": [
+    "@code-yeongyu/comment-checker"
+  ]
 }

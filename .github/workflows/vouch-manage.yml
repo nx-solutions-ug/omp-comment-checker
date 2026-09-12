@@ -26,9 +26,9 @@ jobs:
         with:
           discussion-number: ${{ github.event.discussion.number }}
           comment-node-id: ${{ github.event.comment.node_id }}
-          vouch-keyword: "!vouch"
-          denounce-keyword: "!denounce"
-          unvouch-keyword: "!unvouch"
+          vouch-keyword: '!vouch'
+          denounce-keyword: '!denounce'
+          unvouch-keyword: '!unvouch'
           roles: admin,maintain,write
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}

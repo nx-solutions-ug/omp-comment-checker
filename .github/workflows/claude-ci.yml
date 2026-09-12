@@ -6,16 +6,16 @@ name: claude-ci
 
 on:
   issues:
-    types: [ opened ]
+    types: [opened]
   pull_request:
-    types: [ opened, ready_for_review, closed ]
+    types: [opened, ready_for_review, closed]
   workflow_dispatch:
     inputs:
       pr_number:
-        description: "PR number to label (triggers label-pr job)"
+        description: 'PR number to label (triggers label-pr job)'
         required: false
       issue_number:
-        description: "Issue number to triage (triggers triage-issue job)"
+        description: 'Issue number to triage (triggers triage-issue job)'
         required: false
 
 jobs:
@@ -72,8 +72,8 @@ jobs:
           # the action refuses to run for them by default — without this, triage
           # would silently never happen. Replace "*" with a comma-separated list
           # of logins to tighten. Note the job holds only `issues: write`.
-          allowed_non_write_users: "*"
-          prompt: "/triage-issue ${{ github.event.issue.number || github.event.inputs.issue_number }}"
+          allowed_non_write_users: '*'
+          prompt: '/triage-issue ${{ github.event.issue.number || github.event.inputs.issue_number }}'
           claude_args: |
             --model claude-sonnet-5
             --allowedTools "Bash,Read,Grep,Glob,WebFetch"
@@ -212,8 +212,8 @@ jobs:
           github_token: ${{ steps.app-token.outputs.token }}
           # Dependency-bot PRs must be labelled too, and the action blocks bot
           # actors by default.
-          allowed_bots: "renovate[bot],dependabot[bot],chronova-agent[bot]"
-          prompt: "/label-pr ${{ github.event.pull_request.number || github.event.inputs.pr_number }}"
+          allowed_bots: 'renovate[bot],dependabot[bot],chronova-agent[bot]'
+          prompt: '/label-pr ${{ github.event.pull_request.number || github.event.inputs.pr_number }}'
           claude_args: |
             --model claude-sonnet-5
             --allowedTools "Bash,Read,Grep,Glob"

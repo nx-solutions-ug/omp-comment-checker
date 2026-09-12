@@ -84,6 +84,7 @@ This marks the issue as accepted by maintainers and signals to other workflows t
 ## Step 4: Create a branch
 
 Determine the branch prefix based on the issue type:
+
 - Use `fix/issue-$ARGUMENTS` for bugs.
 - Use `feat/issue-$ARGUMENTS` for features or enhancements.
 
@@ -155,6 +156,7 @@ If any gate fails, fix the failure and re-run that gate. Do **not** proceed to S
 ## Step 9: Commit and push
 
 Determine the commit prefix based on the issue type:
+
 - Use `fix(issue-$ARGUMENTS)` for bugs.
 - Use `feat(issue-$ARGUMENTS)` for features or enhancements.
 
@@ -207,6 +209,7 @@ gh pr edit <PR-NUMBER> --add-label "<type-label>,<priority-label>"
 ```
 
 Where:
+
 - Type labels: `bug` for bugs, `feature` for features, `enhancement` for improvements.
 - Priority labels: `priority: critical`, `priority: high`, `priority: medium`, or `priority: low` — match the priority from the issue.
 

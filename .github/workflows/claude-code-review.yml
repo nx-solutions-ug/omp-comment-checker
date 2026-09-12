@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: "PR number to review"
+        description: 'PR number to review'
         required: true
 
 concurrency:
@@ -106,8 +106,8 @@ jobs:
           github_token: ${{ steps.app-token.outputs.token }}
           # This job exists precisely to review bot-authored PRs, and the action
           # blocks bot actors by default — without this it never runs.
-          allowed_bots: "renovate[bot],dependabot[bot]"
-          prompt: "/dependency-review ${{ github.event.pull_request.number }}"
+          allowed_bots: 'renovate[bot],dependabot[bot]'
+          prompt: '/dependency-review ${{ github.event.pull_request.number }}'
           claude_args: |
             --model claude-sonnet-5
             --allowedTools "Bash,Read,Grep,Glob,WebFetch,WebSearch"
@@ -292,7 +292,7 @@ jobs:
           # `git diff origin/<base>...HEAD` would report no changes at all and
           # the review would run against an empty diff.
           ref: refs/pull/${{ github.event.pull_request.number || github.event.inputs.pr_number }}/head
-          fetch-depth: 0  # Required for git diff against base branch to prevent HTTP 406 on >300 files
+          fetch-depth: 0 # Required for git diff against base branch to prevent HTTP 406 on >300 files
           persist-credentials: false
 
       - name: Generate app token
@@ -324,11 +324,11 @@ jobs:
           # Jules review events and post-agent `synchronize` pushes are bot
           # actors; without this the action blocks them and the PR is never
           # re-reviewed.
-          allowed_bots: "renovate[bot],dependabot[bot],google-labs-jules[bot],chronova-agent[bot]"
+          allowed_bots: 'renovate[bot],dependabot[bot],google-labs-jules[bot],chronova-agent[bot]'
           # Contributors without write access on public repos would otherwise
           # never get a review. Replace "*" with explicit logins to tighten.
-          allowed_non_write_users: "*"
-          prompt: "/review-pr ${{ github.event.pull_request.number || github.event.inputs.pr_number }}"
+          allowed_non_write_users: '*'
+          prompt: '/review-pr ${{ github.event.pull_request.number || github.event.inputs.pr_number }}'
           claude_args: |
             --model claude-sonnet-5
             --allowedTools "Bash,Read,Grep,Glob,WebFetch"

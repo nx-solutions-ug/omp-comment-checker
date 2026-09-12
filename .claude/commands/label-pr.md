@@ -22,6 +22,7 @@ gh pr diff $ARGUMENTS
 Check the PR's current labels (from Step 1). If the PR already has **both** a type label (`bug`, `feature`, `enhancement`, `docs`, `chore`) **and** a priority label (`priority: critical`, `priority: high`, `priority: medium`, `priority: low`), **STOP immediately** — do not apply labels, do not post any comment, do not proceed further.
 
 Print a one-line skip message and exit:
+
 ```
 Skipped PR #$ARGUMENTS: already has type and priority labels.
 ```
@@ -48,22 +49,22 @@ Using the PR title, description, and diff, determine:
 
 **Type** (apply exactly one):
 
-| Label | When to apply |
-|---|---|
-| `bug` | Fixes broken behavior or produces incorrect results |
-| `feature` | Adds a new capability that did not exist before |
-| `enhancement` | Improves an existing feature or behavior |
-| `docs` | Documentation changes only |
-| `chore` | Maintenance, infrastructure, CI, tooling, or dependency updates |
+| Label         | When to apply                                                   |
+| ------------- | --------------------------------------------------------------- |
+| `bug`         | Fixes broken behavior or produces incorrect results             |
+| `feature`     | Adds a new capability that did not exist before                 |
+| `enhancement` | Improves an existing feature or behavior                        |
+| `docs`        | Documentation changes only                                      |
+| `chore`       | Maintenance, infrastructure, CI, tooling, or dependency updates |
 
 **Priority** (apply exactly one):
 
-| Label | When to apply |
-|---|---|
-| `priority: critical` | Production is down, data loss, or security vulnerability |
-| `priority: high` | Major feature broken, significant user impact, no workaround |
-| `priority: medium` | Normal change, workaround exists or impact is limited |
-| `priority: low` | Nice-to-have, cosmetic, or minor improvement |
+| Label                | When to apply                                                |
+| -------------------- | ------------------------------------------------------------ |
+| `priority: critical` | Production is down, data loss, or security vulnerability     |
+| `priority: high`     | Major feature broken, significant user impact, no workaround |
+| `priority: medium`   | Normal change, workaround exists or impact is limited        |
+| `priority: low`      | Nice-to-have, cosmetic, or minor improvement                 |
 
 ## Step 6: Apply labels
 
@@ -78,6 +79,7 @@ Example: `gh pr edit $ARGUMENTS --add-label "bug,priority: medium"`
 ## Step 7: Print summary
 
 Print a single summary line:
+
 ```
 Labeled PR #$ARGUMENTS with <type> and <priority>.
 ```

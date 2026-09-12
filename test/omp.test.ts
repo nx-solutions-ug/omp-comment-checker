@@ -1,348 +1,365 @@
-import crypto from "node:crypto";
-import { describe, expect, it } from "vitest";
-import { extractFromOmpEditDetails } from "../src/core.js";
-import type { ExtensionContextLike } from "../src/index.ts";
-import ompCommentCheckerExtension from "../src/index.ts";
-import { createOmpBackend, type WarningRecord } from "../src/omp.js";
-import { SelfHealStore } from "../src/self-heal.js";
+import crypto from 'node:crypto';
+import { describe, expect, it } from 'vitest';
+import { extractFromOmpEditDetails } from '../src/core.js';
+import type { ExtensionContextLike } from '../src/index.ts';
+import ompCommentCheckerExtension from '../src/index.ts';
+import { createOmpBackend, type WarningRecord } from '../src/omp.js';
+import { SelfHealStore } from '../src/self-heal.js';
 
-describe("SelfHealStore", () => {
-	it("#given a fresh store #when recording warnings #then assigns stable ids and returns unfired in order", () => {
-		// given
-		const store = new SelfHealStore();
+describe('SelfHealStore', () => {
+  it('#given a fresh store #when recording warnings #then assigns stable ids and returns unfired in order', () => {
+    // given
+    const store = new SelfHealStore();
 
-		// when
-		const a = store.record({ filePath: "src/a.ts", message: "m1", sourceToolName: "write" });
-		const b = store.record({ filePath: "src/b.ts", message: "m2", sourceToolName: "edit" });
+    // when
+    const a = store.record({ filePath: 'src/a.ts', message: 'm1', sourceToolName: 'write' });
+    const b = store.record({ filePath: 'src/b.ts', message: 'm2', sourceToolName: 'edit' });
 
-		// then
-		expect(a.id).not.toEqual(b.id);
-		expect(a.fired).toBe(false);
-		expect(b.fired).toBe(false);
-		expect(a.ts).toBeLessThanOrEqual(Date.now());
-		expect(store.size()).toBe(2);
-		expect(store.unfired()).toEqual([a, b]);
-	});
+    // then
+    expect(a.id).not.toEqual(b.id);
+    expect(a.fired).toBe(false);
+    expect(b.fired).toBe(false);
+    expect(a.ts).toBeLessThanOrEqual(Date.now());
+    expect(store.size()).toBe(2);
+    expect(store.unfired()).toEqual([a, b]);
+  });
 
-	it("#given recorded warnings #when marking fired #then unfired returns remaining records", () => {
-		// given
-		const store = new SelfHealStore();
-		const a = store.record({ filePath: "src/a.ts", message: "m1", sourceToolName: "write" });
-		const b = store.record({ filePath: "src/b.ts", message: "m2", sourceToolName: "edit" });
+  it('#given recorded warnings #when marking fired #then unfired returns remaining records', () => {
+    // given
+    const store = new SelfHealStore();
+    const a = store.record({ filePath: 'src/a.ts', message: 'm1', sourceToolName: 'write' });
+    const b = store.record({ filePath: 'src/b.ts', message: 'm2', sourceToolName: 'edit' });
 
-		// when
-		store.markFired([a.id]);
+    // when
+    store.markFired([a.id]);
 
-		// then
-		expect(store.unfired()).toEqual([b]);
-		expect(a.fired).toBe(true);
-	});
+    // then
+    expect(store.unfired()).toEqual([b]);
+    expect(a.fired).toBe(true);
+  });
 
-	it("#given a populated store #when clearing #then removes all records", () => {
-		// given
-		const store = new SelfHealStore();
-		store.record({ filePath: "src/a.ts", message: "m1", sourceToolName: "write" });
+  it('#given a populated store #when clearing #then removes all records', () => {
+    // given
+    const store = new SelfHealStore();
+    store.record({ filePath: 'src/a.ts', message: 'm1', sourceToolName: 'write' });
 
-		// when
-		store.clear();
+    // when
+    store.clear();
 
-		// then
-		expect(store.size()).toBe(0);
-		expect(store.unfired()).toEqual([]);
-	});
+    // then
+    expect(store.size()).toBe(0);
+    expect(store.unfired()).toEqual([]);
+  });
 
-	it("#given records with varying timestamps #when listing unfired #then returns them sorted by ts", () => {
-		// given
-		let counter = 0;
-		const monotonicNow = () => {
-			counter += 1;
-			return counter;
-		};
-		const store = new SelfHealStore();
-		const a: WarningRecord = {
-			id: crypto.randomUUID(),
-			ts: monotonicNow(),
-			filePath: "src/a.ts",
-			message: "m1",
-			sourceToolName: "write",
-			fired: false,
-		};
-		const b: WarningRecord = {
-			id: crypto.randomUUID(),
-			ts: monotonicNow(),
-			filePath: "src/b.ts",
-			message: "m2",
-			sourceToolName: "edit",
-			fired: false,
-		};
-		store.record(a);
-		store.record(b);
+  it('#given records with varying timestamps #when listing unfired #then returns them sorted by ts', () => {
+    // given
+    let counter = 0;
+    const monotonicNow = () => {
+      counter += 1;
+      return counter;
+    };
+    const store = new SelfHealStore();
+    const a: WarningRecord = {
+      id: crypto.randomUUID(),
+      ts: monotonicNow(),
+      filePath: 'src/a.ts',
+      message: 'm1',
+      sourceToolName: 'write',
+      fired: false,
+    };
+    const b: WarningRecord = {
+      id: crypto.randomUUID(),
+      ts: monotonicNow(),
+      filePath: 'src/b.ts',
+      message: 'm2',
+      sourceToolName: 'edit',
+      fired: false,
+    };
+    store.record(a);
+    store.record(b);
 
-		// when
-		const unfired = store.unfired();
+    // when
+    const unfired = store.unfired();
 
-		// then
-		expect(unfired.map((w) => w.filePath)).toEqual(["src/a.ts", "src/b.ts"]);
-	});
+    // then
+    expect(unfired.map((w) => w.filePath)).toEqual(['src/a.ts', 'src/b.ts']);
+  });
 });
 
-describe("createOmpBackend", () => {
-	it("#given a full omp pi #when creating backend #then methods delegate and available is true", () => {
-		// given
-		const appendCalls: unknown[] = [];
-		const messageCalls: unknown[] = [];
-		const eventHandlers: Record<string, Array<() => void>> = {};
-		const pi = {
-			appendEntry: (customType: string, data: unknown) => {
-				appendCalls.push([customType, data]);
-			},
-			sendMessage: (message: string, options?: { triggerTurn?: boolean }) => {
-				messageCalls.push([message, options]);
-			},
-			on: (event: string, handler: () => void) => {
-				const handlers = eventHandlers[event] ?? [];
-				eventHandlers[event] = handlers;
-				handlers.push(handler);
-				return () => {
-					eventHandlers[event] = eventHandlers[event]?.filter((h) => h !== handler) ?? [];
-				};
-			},
-		};
+describe('createOmpBackend', () => {
+  it('#given a full omp pi #when creating backend #then methods delegate and available is true', () => {
+    // given
+    const appendCalls: unknown[] = [];
+    const messageCalls: unknown[] = [];
+    const eventHandlers: Record<string, Array<() => void>> = {};
+    const pi = {
+      appendEntry: (customType: string, data: unknown) => {
+        appendCalls.push([customType, data]);
+      },
+      sendMessage: (message: string, options?: { triggerTurn?: boolean }) => {
+        messageCalls.push([message, options]);
+      },
+      on: (event: string, handler: () => void) => {
+        const handlers = eventHandlers[event] ?? [];
+        eventHandlers[event] = handlers;
+        handlers.push(handler);
+        return () => {
+          eventHandlers[event] = eventHandlers[event]?.filter((h) => h !== handler) ?? [];
+        };
+      },
+    };
 
-		// when
-		const backend = createOmpBackend(pi);
-		backend.appendEntry("type-a", { x: 1 });
-		backend.sendMessage("hello", { triggerTurn: true });
-		const cleanup = backend.onSessionCompact(() => {
-			/* no-op */
-		});
-		cleanup();
+    // when
+    const backend = createOmpBackend(pi);
+    backend.appendEntry('type-a', { x: 1 });
+    backend.sendMessage('hello', { triggerTurn: true });
+    const cleanup = backend.onSessionCompact(() => {
+      /* no-op */
+    });
+    cleanup();
 
-		// then
-		expect(backend.available).toBe(true);
-		expect(appendCalls).toEqual([["type-a", { x: 1 }]]);
-		expect(messageCalls).toEqual([["hello", { triggerTurn: true }]]);
-		expect(eventHandlers["session_compact"]).toEqual([]);
-	});
+    // then
+    expect(backend.available).toBe(true);
+    expect(appendCalls).toEqual([['type-a', { x: 1 }]]);
+    expect(messageCalls).toEqual([['hello', { triggerTurn: true }]]);
+    expect(eventHandlers['session_compact']).toEqual([]);
+  });
 
-	it("#given a partial pi with only appendEntry #when creating backend #then available is true and missing methods are no-ops", () => {
-		// given
-		const appendCalls: unknown[] = [];
-		const pi = {
-			appendEntry: (customType: string, data: unknown) => {
-				appendCalls.push([customType, data]);
-			},
-		};
+  it('#given a partial pi with only appendEntry #when creating backend #then available is true and missing methods are no-ops', () => {
+    // given
+    const appendCalls: unknown[] = [];
+    const pi = {
+      appendEntry: (customType: string, data: unknown) => {
+        appendCalls.push([customType, data]);
+      },
+    };
 
-		// when
-		const backend = createOmpBackend(pi);
-		backend.sendMessage("hello");
-		const cleanup = backend.onSessionCompact(() => {
-			/* no-op */
-		});
+    // when
+    const backend = createOmpBackend(pi);
+    backend.sendMessage('hello');
+    const cleanup = backend.onSessionCompact(() => {
+      /* no-op */
+    });
 
-		// then
-		expect(backend.available).toBe(true);
-		expect(appendCalls).toEqual([]);
-		expect(typeof cleanup).toBe("function");
-	});
+    // then
+    expect(backend.available).toBe(true);
+    expect(appendCalls).toEqual([]);
+    expect(typeof cleanup).toBe('function');
+  });
 
-	it("#given an empty pi #when creating backend #then available is false and methods are no-ops", () => {
-		// given
-		const pi = {};
+  it('#given an empty pi #when creating backend #then available is false and methods are no-ops', () => {
+    // given
+    const pi = {};
 
-		// when
-		const backend = createOmpBackend(pi);
-		backend.appendEntry("type-a", { x: 1 });
-		backend.sendMessage("hello");
-		const cleanup = backend.onSessionCompact(() => {
-			/* no-op */
-		});
+    // when
+    const backend = createOmpBackend(pi);
+    backend.appendEntry('type-a', { x: 1 });
+    backend.sendMessage('hello');
+    const cleanup = backend.onSessionCompact(() => {
+      /* no-op */
+    });
 
-		// then
-		expect(backend.available).toBe(false);
-		expect(typeof cleanup).toBe("function");
-	});
+    // then
+    expect(backend.available).toBe(false);
+    expect(typeof cleanup).toBe('function');
+  });
 });
 
-describe("extractFromOmpEditDetails", () => {
-	it("#given omp perFileResults #when extracting #then skips failures and maps write vs edit", () => {
-		// given
-		const details = {
-			perFileResults: [
-				{ filePath: "src/a.ts", oldText: "old", newText: "new", success: true },
-				{ filePath: "src/b.ts", oldText: "", newText: "content", success: true },
-				{ filePath: "src/c.ts", oldText: "x", newText: "y", success: false },
-			],
-		};
+describe('extractFromOmpEditDetails', () => {
+  it('#given omp perFileResults #when extracting #then skips failures and maps write vs edit', () => {
+    // given
+    const details = {
+      perFileResults: [
+        { filePath: 'src/a.ts', oldText: 'old', newText: 'new', success: true },
+        { filePath: 'src/b.ts', oldText: '', newText: 'content', success: true },
+        { filePath: 'src/c.ts', oldText: 'x', newText: 'y', success: false },
+      ],
+    };
 
-		// when
-		const results = extractFromOmpEditDetails(details);
+    // when
+    const results = extractFromOmpEditDetails(details);
 
-		// then
-		expect(results).toEqual([
-			{ filePath: "src/a.ts", oldText: "old", newText: "new", success: true, op: "edit" },
-			{ filePath: "src/b.ts", oldText: "", newText: "content", success: true, op: "write" },
-		]);
-	});
+    // then
+    expect(results).toEqual([
+      { filePath: 'src/a.ts', oldText: 'old', newText: 'new', success: true, op: 'edit' },
+      { filePath: 'src/b.ts', oldText: '', newText: 'content', success: true, op: 'write' },
+    ]);
+  });
 
-	it("#given OMO files details #when extracting #then maps snake_case fields to edit requests", () => {
-		// given
-		const details = {
-			files: [{ file_path: "src/omo.ts", old_text: "old", new_text: "new", success: true }],
-		};
+  it('#given OMO files details #when extracting #then maps snake_case fields to edit requests', () => {
+    // given
+    const details = {
+      files: [{ file_path: 'src/omo.ts', old_text: 'old', new_text: 'new', success: true }],
+    };
 
-		// when
-		const results = extractFromOmpEditDetails(details);
+    // when
+    const results = extractFromOmpEditDetails(details);
 
-		// then
-		expect(results).toEqual([{ filePath: "src/omo.ts", oldText: "old", newText: "new", success: true, op: "edit" }]);
-	});
+    // then
+    expect(results).toEqual([
+      { filePath: 'src/omo.ts', oldText: 'old', newText: 'new', success: true, op: 'edit' },
+    ]);
+  });
 
-	it("#given details without results #when extracting #then returns empty", () => {
-		// given
-		const details = {};
+  it('#given details without results #when extracting #then returns empty', () => {
+    // given
+    const details = {};
 
-		// when
-		const results = extractFromOmpEditDetails(details);
+    // when
+    const results = extractFromOmpEditDetails(details);
 
-		// then
-		expect(results).toEqual([]);
-	});
+    // then
+    expect(results).toEqual([]);
+  });
 });
 
-describe("ompCommentCheckerExtension end-to-end", () => {
-	it("#given a warning from edit tool #when session_compact fires #then records one appendEntry per warning and one sendMessage", async () => {
-		// given
-		const appendCalls: unknown[] = [];
-		const messageCalls: unknown[] = [];
-		const eventHandlers: Record<string, Array<(event: unknown, ctx: ExtensionContextLike) => unknown>> = {};
-		const commandRegistrations: Array<{
-			name: string;
-			description: string;
-			handler: (_args: string[], ctx: ExtensionContextLike) => Promise<void>;
-		}> = [];
-		const pi: {
-			appendEntry: (customType: string, data: unknown) => void;
-			sendMessage: (message: string, options?: { triggerTurn?: boolean }) => void;
-			on: (
-				event: string,
-				handler: (event: unknown, ctx: ExtensionContextLike) => unknown,
-			) => (() => void) | undefined;
-			registerCommand: (
-				name: string,
-				spec: { description: string; handler: (_args: string[], ctx: ExtensionContextLike) => Promise<void> },
-			) => void;
-		} = {
-			appendEntry: (customType, data) => {
-				appendCalls.push([customType, data]);
-			},
-			sendMessage: (message, options) => {
-				messageCalls.push([message, options]);
-			},
-			on: (event, handler) => {
-				const handlers = eventHandlers[event] ?? [];
-				eventHandlers[event] = handlers;
-				handlers.push(handler);
-				return () => {
-					eventHandlers[event] = eventHandlers[event]?.filter((h) => h !== handler) ?? [];
-				};
-			},
-			registerCommand: (name, spec) => {
-				commandRegistrations.push({ name, description: spec.description, handler: spec.handler });
-			},
-		};
+describe('ompCommentCheckerExtension end-to-end', () => {
+  it('#given a warning from edit tool #when session_compact fires #then records one appendEntry per warning and one sendMessage', async () => {
+    // given
+    const appendCalls: unknown[] = [];
+    const messageCalls: unknown[] = [];
+    const eventHandlers: Record<
+      string,
+      Array<(event: unknown, ctx: ExtensionContextLike) => unknown>
+    > = {};
+    const commandRegistrations: Array<{
+      name: string;
+      description: string;
+      handler: (_args: string[], ctx: ExtensionContextLike) => Promise<void>;
+    }> = [];
+    const pi: {
+      appendEntry: (customType: string, data: unknown) => void;
+      sendMessage: (message: string, options?: { triggerTurn?: boolean }) => void;
+      on: (
+        event: string,
+        handler: (event: unknown, ctx: ExtensionContextLike) => unknown,
+      ) => (() => void) | undefined;
+      registerCommand: (
+        name: string,
+        spec: {
+          description: string;
+          handler: (_args: string[], ctx: ExtensionContextLike) => Promise<void>;
+        },
+      ) => void;
+    } = {
+      appendEntry: (customType, data) => {
+        appendCalls.push([customType, data]);
+      },
+      sendMessage: (message, options) => {
+        messageCalls.push([message, options]);
+      },
+      on: (event, handler) => {
+        const handlers = eventHandlers[event] ?? [];
+        eventHandlers[event] = handlers;
+        handlers.push(handler);
+        return () => {
+          eventHandlers[event] = eventHandlers[event]?.filter((h) => h !== handler) ?? [];
+        };
+      },
+      registerCommand: (name, spec) => {
+        commandRegistrations.push({ name, description: spec.description, handler: spec.handler });
+      },
+    };
 
-		// when
-		ompCommentCheckerExtension(pi);
-		const toolResultHandlers = eventHandlers["tool_result"];
-		expect(toolResultHandlers).toBeDefined();
-		const toolHandler = toolResultHandlers?.[0];
-		expect(toolHandler).toBeDefined();
-		await toolHandler?.(
-			{
-				toolName: "edit",
-				input: { path: "src/example.ts", old_string: "old", new_string: "// c\nnew" },
-				content: [{ type: "text", text: "edited src/example.ts" }],
-				isError: false,
-			},
-			{
-				cwd: "/workspace",
-				sessionManager: { getSessionId: () => "session-1" },
-				ui: {
-					notify: () => {
-						/* no-op */
-					},
-				},
-			},
-		);
+    // when
+    ompCommentCheckerExtension(pi);
+    const toolResultHandlers = eventHandlers['tool_result'];
+    expect(toolResultHandlers).toBeDefined();
+    const toolHandler = toolResultHandlers?.[0];
+    expect(toolHandler).toBeDefined();
+    await toolHandler?.(
+      {
+        toolName: 'edit',
+        input: { path: 'src/example.ts', old_string: 'old', new_string: '// c\nnew' },
+        content: [{ type: 'text', text: 'edited src/example.ts' }],
+        isError: false,
+      },
+      {
+        cwd: '/workspace',
+        sessionManager: { getSessionId: () => 'session-1' },
+        ui: {
+          notify: () => {
+            /* no-op */
+          },
+        },
+      },
+    );
 
-		// then
-		expect(appendCalls.length).toBe(1);
-		expect((appendCalls[0] as [string, { filePath: string }])[0]).toEqual("omp-comment-checker:warning");
-		expect((appendCalls[0] as [string, { filePath: string }])[1].filePath).toEqual("src/example.ts");
-		expect(messageCalls).toEqual([]);
+    // then
+    expect(appendCalls.length).toBe(1);
+    expect((appendCalls[0] as [string, { filePath: string }])[0]).toEqual(
+      'omp-comment-checker:warning',
+    );
+    expect((appendCalls[0] as [string, { filePath: string }])[1].filePath).toEqual(
+      'src/example.ts',
+    );
+    expect(messageCalls).toEqual([]);
 
-		// when session_compact fires with unfired warnings
-		const compactHandlers = eventHandlers["session_compact"];
-		expect(compactHandlers).toBeDefined();
-		await compactHandlers?.[0]?.(
-			{},
-			{
-				cwd: "/workspace",
-				ui: {},
-			},
-		);
+    // when session_compact fires with unfired warnings
+    const compactHandlers = eventHandlers['session_compact'];
+    expect(compactHandlers).toBeDefined();
+    await compactHandlers?.[0]?.(
+      {},
+      {
+        cwd: '/workspace',
+        ui: {},
+      },
+    );
 
-		// then one sendMessage is recorded
-		expect(messageCalls.length).toBe(1);
-		const [sentMessage, sentOptions] = messageCalls[0] as [string, { triggerTurn?: boolean }];
-		expect(sentOptions).toEqual({ triggerTurn: false });
-		expect(sentMessage).toContain("omp-comment-checker self-heal: 1 warning(s) still need addressing:");
-		expect(sentMessage).toContain("• src/example.ts:");
-	});
+    // then one sendMessage is recorded
+    expect(messageCalls.length).toBe(1);
+    const [sentMessage, sentOptions] = messageCalls[0] as [string, { triggerTurn?: boolean }];
+    expect(sentOptions).toEqual({ triggerTurn: false });
+    expect(sentMessage).toContain(
+      'omp-comment-checker self-heal: 1 warning(s) still need addressing:',
+    );
+    expect(sentMessage).toContain('• src/example.ts:');
+  });
 
-	it("#given a non-write/edit tool_call #when the LLM invokes it #then the comment-checker does not interfere", async () => {
-		// given
-		const eventHandlers: Record<string, Array<(event: unknown, ctx: ExtensionContextLike) => unknown>> = {};
-		const pi = {
-			appendEntry: () => {
-				/* no-op */
-			},
-			sendMessage: () => {
-				/* no-op */
-			},
-			on: (event: string, handler: (event: unknown, ctx: ExtensionContextLike) => unknown) => {
-				const handlers = eventHandlers[event] ?? [];
-				eventHandlers[event] = handlers;
-				handlers.push(handler);
-				return () => {
-					eventHandlers[event] = eventHandlers[event]?.filter((h) => h !== handler) ?? [];
-				};
-			},
-			registerCommand: () => {
-				/* no-op */
-			},
-		};
+  it('#given a non-write/edit tool_call #when the LLM invokes it #then the comment-checker does not interfere', async () => {
+    // given
+    const eventHandlers: Record<
+      string,
+      Array<(event: unknown, ctx: ExtensionContextLike) => unknown>
+    > = {};
+    const pi = {
+      appendEntry: () => {
+        /* no-op */
+      },
+      sendMessage: () => {
+        /* no-op */
+      },
+      on: (event: string, handler: (event: unknown, ctx: ExtensionContextLike) => unknown) => {
+        const handlers = eventHandlers[event] ?? [];
+        eventHandlers[event] = handlers;
+        handlers.push(handler);
+        return () => {
+          eventHandlers[event] = eventHandlers[event]?.filter((h) => h !== handler) ?? [];
+        };
+      },
+      registerCommand: () => {
+        /* no-op */
+      },
+    };
 
-		// when
-		ompCommentCheckerExtension(pi);
-		const toolCallHandlers = eventHandlers["tool_call"];
-		expect(toolCallHandlers).toBeDefined();
-		const callHandler = toolCallHandlers?.[0];
-		expect(typeof callHandler).toBe("function");
+    // when
+    ompCommentCheckerExtension(pi);
+    const toolCallHandlers = eventHandlers['tool_call'];
+    expect(toolCallHandlers).toBeDefined();
+    const callHandler = toolCallHandlers?.[0];
+    expect(typeof callHandler).toBe('function');
 
-		// then: tools the checker doesn't cover (bash, read, etc.) pass through.
-		const ctx: ExtensionContextLike = {
-			cwd: "/workspace",
-			sessionManager: { getSessionId: () => "session-1" },
-			ui: {
-				notify: () => {
-					/* no-op */
-				},
-			},
-		};
-		const result = await callHandler?.({ toolName: "bash", input: { command: "ls" } }, ctx);
-		expect(result).toBeUndefined();
-	});
+    // then: tools the checker doesn't cover (bash, read, etc.) pass through.
+    const ctx: ExtensionContextLike = {
+      cwd: '/workspace',
+      sessionManager: { getSessionId: () => 'session-1' },
+      ui: {
+        notify: () => {
+          /* no-op */
+        },
+      },
+    };
+    const result = await callHandler?.({ toolName: 'bash', input: { command: 'ls' } }, ctx);
+    expect(result).toBeUndefined();
+  });
 });

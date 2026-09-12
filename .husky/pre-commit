@@ -1,0 +1,41 @@
+# Pre-commit: run quality gates (lint + format + type-check)
+# Tests run in CI — keeping this hook fast for iterative development.
+# Skip with: git commit --no-verify
+
+echo "── pre-commit: running quality gates ──"
+
+echo ""
+echo "▶ oxlint"
+bun run lint
+lint_status=$?
+
+echo ""
+echo "▶ oxfmt"
+bun run format:check
+format_status=$?
+
+echo ""
+echo "▶ TypeScript type-check"
+bun run type-check
+type_status=$?
+
+echo ""
+if [ $lint_status -ne 0 ]; then
+  echo "✗ oxlint failed — fix lint errors before committing."
+  echo "  Skip with: git commit --no-verify"
+  exit 1
+fi
+
+if [ $format_status -ne 0 ]; then
+  echo "✗ oxfmt found unformatted files — run 'bun run format'."
+  echo "  Skip with: git commit --no-verify"
+  exit 1
+fi
+
+if [ $type_status -ne 0 ]; then
+  echo "✗ Type-check failed — fix type errors before committing."
+  echo "  Skip with: git commit --no-verify"
+  exit 1
+fi
+
+echo "✓ All quality gates passed."

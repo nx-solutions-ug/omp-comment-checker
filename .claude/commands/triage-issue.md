@@ -1,5 +1,5 @@
 ---
-description: "Triage a GitHub issue: classify type and priority, then set the issue fields and labels"
+description: 'Triage a GitHub issue: classify type and priority, then set the issue fields and labels'
 argument-hint: <issue-number>
 ---
 
@@ -50,6 +50,7 @@ Check the issue's current type field, priority field value, and labels (from Ste
 - The issue has the `accepted` status label.
 
 Print a one-line skip message and exit:
+
 ```
 Skipped issue #$ARGUMENTS: already has type + priority fields, or is accepted.
 ```
@@ -79,24 +80,25 @@ Using the issue title, body, **and all comments**, determine:
 
 **Type** — choose one issue type AND one label:
 
-| Issue Type | Label | When to apply |
-|---|---|---|
-| `Bug` | `bug` | Existing behavior is broken or produces incorrect results |
-| `Feature` | `feature` | Request for a new capability that does not yet exist |
-| `Task` | `enhancement` | Request to improve an existing feature |
-| `Task` | `docs` | Documentation is missing, incorrect, or unclear |
-| `Task` | `chore` | Maintenance, infrastructure, CI, tooling, or dependency work |
+| Issue Type | Label         | When to apply                                                |
+| ---------- | ------------- | ------------------------------------------------------------ |
+| `Bug`      | `bug`         | Existing behavior is broken or produces incorrect results    |
+| `Feature`  | `feature`     | Request for a new capability that does not yet exist         |
+| `Task`     | `enhancement` | Request to improve an existing feature                       |
+| `Task`     | `docs`        | Documentation is missing, incorrect, or unclear              |
+| `Task`     | `chore`       | Maintenance, infrastructure, CI, tooling, or dependency work |
 
 **Priority** — choose one priority field value AND one label:
 
-| Priority Value | Label | When to apply |
-|---|---|---|
-| `Urgent` | `priority: critical` | Production is down, data loss, or security vulnerability |
-| `High` | `priority: high` | Major feature broken, common workflow blocked, no workaround |
-| `Medium` | `priority: medium` | Normal issue, workaround exists or impact is limited |
-| `Low` | `priority: low` | Edge case, cosmetic issue, minor inconvenience |
+| Priority Value | Label                | When to apply                                                |
+| -------------- | -------------------- | ------------------------------------------------------------ |
+| `Urgent`       | `priority: critical` | Production is down, data loss, or security vulnerability     |
+| `High`         | `priority: high`     | Major feature broken, common workflow blocked, no workaround |
+| `Medium`       | `priority: medium`   | Normal issue, workaround exists or impact is limited         |
+| `Low`          | `priority: low`      | Edge case, cosmetic issue, minor inconvenience               |
 
 **Status** — apply exactly one label:
+
 - Apply `needs-triage` if the issue is a standard report needing maintainer review.
 - Apply `needs-info` **instead** of `needs-triage` if the issue is clearly a question (how-to, clarification, support request) rather than a bug/feature report.
 - Do **not** apply `accepted` — that is for maintainers to add later.
@@ -167,6 +169,7 @@ If the status label is `needs-info` (question / missing information), do **not**
 ## Step 9: Print summary
 
 Print a single summary line:
+
 ```
 Triaged issue #$ARGUMENTS: <issue-type> + <priority-value> + <status>.
 ```

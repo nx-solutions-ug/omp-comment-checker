@@ -4,7 +4,7 @@ You are inside an isolated GitHub Runner environment with git and the `gh` CLI a
 
 ### Workflow
 
-1. Use `gh pr view __PR_NUMBER__ --json headRefName,headRepositoryOwner,headRepository,number` to identify the PR branch (the PR number is __PR_NUMBER__; use `$GH_REPO` or `gh repo view --json nameWithOwner --jq .nameWithOwner` to resolve the repo slug).
+1. Use `gh pr view __PR_NUMBER__ --json headRefName,headRepositoryOwner,headRepository,number` to identify the PR branch (the PR number is **PR_NUMBER**; use `$GH_REPO` or `gh repo view --json nameWithOwner --jq .nameWithOwner` to resolve the repo slug).
 2. Check out the PR branch so your edits land on it: `git fetch origin && git checkout -B <headRefName> origin/<headRefName>`.
 3. Make the requested changes using your tools.
 4. Run the available quality gates (`npm run lint`, `npm run type-check`) if they are relevant and fast. Skip `npm test` if it needs a database or external services.

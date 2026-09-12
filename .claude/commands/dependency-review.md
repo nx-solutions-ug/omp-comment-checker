@@ -1,5 +1,5 @@
 ---
-description: "Review a Renovate/Dependabot pull request: research changelogs and assess the impact of the update"
+description: 'Review a Renovate/Dependabot pull request: research changelogs and assess the impact of the update'
 argument-hint: <pr-number>
 ---
 
@@ -25,6 +25,7 @@ gh pr view $ARGUMENTS --json title,body,author,headRefOid --jq '{title: .title, 
 ```
 
 Run `gh pr diff $ARGUMENTS` to determine:
+
 - Which packages were updated
 - Old and new versions
 - The update type (patch / minor / major)
@@ -34,6 +35,7 @@ Focus on `package.json`, `package-lock.json`, and GitHub Actions workflow files.
 ## Step 2: Research Release Notes
 
 For EACH updated dependency, find the actual changelog or release notes:
+
 - **npm packages**: Check GitHub releases via `gh api /repos/{owner}/{repo}/releases` or inspect `CHANGELOG.md`.
 - **GitHub Actions**: Check the action repository's releases via `gh api /repos/{owner}/{repo}/releases`.
 
@@ -69,11 +71,13 @@ Submit a GitHub review via the pulls API:
 ## Dependency Update Summary
 
 ### Changes
-| Package | From | To | Type |
-|---------|------|----|------|
+
+| Package        | From          | To            | Type                |
+| -------------- | ------------- | ------------- | ------------------- |
 | [package-name] | [old-version] | [new-version] | [patch/minor/major] |
 
 ### Release Highlights
+
 - **Security fixes**: CVEs or security patches (if any)
 - **Bug fixes**: Notable fixes relevant to our usage
 - **Breaking changes**: Anything that could affect us
@@ -81,6 +85,7 @@ Submit a GitHub review via the pulls API:
 - **New features**: Anything we might want to leverage
 
 ### Impact Assessment
+
 - [ ] No breaking changes detected
 - [ ] Version constraints are compatible
 - [ ] No deprecated API usage found in src/
@@ -88,10 +93,12 @@ Submit a GitHub review via the pulls API:
 - [ ] Vitest / Biome compatibility unaffected
 
 ### Recommendation
+
 [SAFE TO MERGE / REVIEW RECOMMENDED / ACTION REQUIRED] with reasoning
 ```
 
 Submit using the GitHub API:
+
 - For safe patches and minor updates with no breaking changes:
   ```bash
   HEAD_SHA=$(gh pr view $ARGUMENTS --json headRefOid --jq .headRefOid)
@@ -116,6 +123,7 @@ Submit using the GitHub API:
   ```
 
 ## Rules
+
 - Do NOT push commits or modify repository files.
 - Do NOT merge the PR.
 - Always use $REPO_SLUG for API calls.
