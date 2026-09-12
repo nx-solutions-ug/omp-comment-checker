@@ -1,3 +1,8 @@
+---
+description: Full code review of a pull request, posting inline comments and resolving addressed threads
+argument-hint: <pr-number>
+---
+
 You MUST review PR $ARGUMENTS right now. Do NOT ask for more information — execute all steps immediately.
 
 ## Step 0: Resolve repository and install extension
