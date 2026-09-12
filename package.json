@@ -48,7 +48,7 @@
     "type-check": "tsgo --noEmit",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "dependencies": {
     "@code-yeongyu/comment-checker": "^0.8.0"
