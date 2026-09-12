@@ -1,3 +1,10 @@
+## [1.3.6](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.3.5...v1.3.6) (2026-09-12)
+
+
+### Bug Fixes
+
+* **ci:** convert release workflow to bun and harden the prepare script ([dcbbef2](https://github.com/nx-solutions-ug/omp-comment-checker/commit/dcbbef248a2f182261008eee7c67a529eead6000))
+
 ## [1.3.5](https://github.com/nx-solutions-ug/omp-comment-checker/compare/v1.3.4...v1.3.5) (2026-09-12)
 
 
