@@ -9,6 +9,22 @@
 [![Release](https://github.com/nx-solutions-ug/omp-comment-checker/actions/workflows/release.yml/badge.svg)](https://github.com/nx-solutions-ug/omp-comment-checker/actions/workflows/release.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+> [!IMPORTANT]
+> **Unmaintained — this repository is archived.**
+>
+> I have switched my coding harness away from oh-my-pi / pi, so this
+> extension is no longer part of my daily workflow and will not receive
+> further updates, fixes, or issue and pull request triage.
+>
+> The published builds stay publicly available: the
+> [`@chronova/omp-comment-checker`](https://www.npmjs.com/package/@chronova/omp-comment-checker)
+> package on npm and the
+> [GitHub releases](https://github.com/nx-solutions-ug/omp-comment-checker/releases)
+> remain installable, and the source stays readable here. Everything below
+> describes the last released state and is left unchanged for reference.
+>
+> The code is MIT licensed — fork it if you want to carry it forward.
+
 Comment checker hook for
 [oh-my-pi](https://github.com/can1357/oh-my-pi) (`omp`) and the upstream
 [pi coding agent](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent).
